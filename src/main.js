@@ -27,9 +27,11 @@ async function initHandDetection() {
         runningMode: "VIDEO"
     });
     function detect() {
-        const result = handLandmarker.detectForVideo(video, performance.now());
+        if (video.readyState >= 2){
+            const result = handLandmarker.detectForVideo(video, performance.now());
         window.currentLandmarks = result.landmarks[0] ?? null;
-        requestAnimationFrame(detect)
+        }
+        requestAnimationFrame(detect);
     }
     detect();
 }
@@ -43,6 +45,13 @@ async function startCamera() {
 
     video.srcObject = stream;
     await video.play();
+
+    await new Promise(resolve => {
+        video.addEventListener("loadedmetadata", resolve, {once: true});
+    });
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
     loop();
 }
