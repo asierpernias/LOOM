@@ -1,3 +1,5 @@
+import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js";
+
 const app = document.querySelector("#app");
 
 
@@ -5,10 +7,8 @@ const video = document.createElement("video");
 video.autoplay = true;
 video.playsInline = true;
 
-video.style.width = "100%";
-video.style.maxWidth = "600px";
-video.style.border = "2px solid black";
-video.style.borderRadius = "10px";
+video.style.display = "none"
+
 
 app.appendChild(video);
 
@@ -16,6 +16,25 @@ const canvas = document.createElement("canvas");
 app.appendChild(canvas);
 
 const ctx = canvas.getContext("2d");
+
+async function initHandDetection() {
+    const vision = await FilesetResolver.forVisionTasks(
+         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+    const handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"},
+        numHands: 1, 
+        runningMode: "VIDEO"
+    });
+    function detect() {
+        const result = handLandmarker.detectForVideo(video, performance.now());
+        window.currentLandmarks = result.landmarks[0] ?? null;
+        requestAnimationFrame(detect)
+    }
+    detect();
+}
+
+initHandDetection();
 
 async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -34,6 +53,15 @@ function loop() {
         canvas.height = video.videoHeight;
 
         ctx.drawImage(video, 0, 0);
+
+        if (window.currentLandmarks) {
+            ctx.fillStyle = "red";
+            for (const point of window.currentLandmarks) {
+                ctx.beginPath();
+                ctx.arc(point.x * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
     }
 
     requestAnimationFrame(loop);
