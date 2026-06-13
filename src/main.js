@@ -69,7 +69,7 @@ function loop() {
         ctx.fillStyle = "red";
         for (const point of window.currentLandmarks) {
             ctx.beginPath();
-            ctx.arc(point.x * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
+            ctx.arc((1 - point.x) * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
             ctx.fill();
         }
     }
