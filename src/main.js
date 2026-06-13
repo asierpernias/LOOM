@@ -60,7 +60,10 @@ async function startCamera() {
 }
 
 function loop() {
-    ctx.drawImage(video, 0, 0);
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0);
+    ctx.restore();
 
     if (window.currentLandmarks) {
         ctx.fillStyle = "red";
