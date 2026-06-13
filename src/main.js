@@ -2,6 +2,14 @@ import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 
 const app = document.querySelector("#app");
 
+const audioCtx = new AudioContext();
+const oscillator = audioCtx.createOscillator();
+const gainNode = audioCtx.createGain();
+
+oscillator.connect(gainNode);
+gainNode.connect(audioCtx.destination);
+gainNode.gain.value = 0;
+oscillator.start();
 
 const video = document.createElement("video");
 video.autoplay = true;
@@ -72,6 +80,17 @@ function loop() {
             ctx.arc((1 - point.x) * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
             ctx.fill();
         }
+
+        const wrist = window.currentLandmarks[0];
+        const x = 1 - wrist.x;
+        const y = wrist.y;
+        const freq = 100 + x * 900;
+        const vol = 1 - y;
+
+        oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
+        gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
+    } else {
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
     }
 
 
