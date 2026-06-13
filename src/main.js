@@ -6,11 +6,25 @@ const audioCtx = new AudioContext();
 const oscillator = audioCtx.createOscillator();
 const gainNode = audioCtx.createGain();
 
+const instruments = {
+    1: {type: "sine", label:"Theremin"},
+    2: {type: "square", label:"Synth"},
+    3: {type: "sawtooth", label: "Bass"}
+};
+
+const FINGER_TIPS = [8, 12, 16, 20];
+const FINGER_BASE = [6, 10, 14, 18];
+
 oscillator.connect(gainNode);
 gainNode.connect(audioCtx.destination);
 gainNode.gain.value = 0;
 oscillator.start();
 
+document.addEventListener("click", () => {
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+}, {once: true})
 const video = document.createElement("video");
 video.autoplay = true;
 video.playsInline = true;
@@ -25,6 +39,15 @@ app.appendChild(canvas);
 
 const ctx = canvas.getContext("2d");
 
+function countFingers(landmarks) {
+    let count = 0;
+    for (let i = 0; i < FINGER_TIPS.length; i++) {
+        if (landmarks[FINGER_TIPS[i]].y < landmarks[FINGER_BASE[i]].y) {
+            count ++;
+        }
+    }
+    return count;
+}
 async function initHandDetection() {
     const vision = await FilesetResolver.forVisionTasks(
          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
@@ -75,6 +98,13 @@ function loop() {
 
     if (window.currentLandmarks) {
         ctx.fillStyle = "red";
+        
+        const fingers = countFingers(window.currentLandmarks);
+        const instrument = instruments[fingers];
+
+        if (instrument){
+            oscillator.type = instrument.type;
+        }
         for (const point of window.currentLandmarks) {
             ctx.beginPath();
             ctx.arc((1 - point.x) * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
