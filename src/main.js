@@ -15,6 +15,18 @@ const instruments = {
 const FINGER_TIPS = [8, 12, 16, 20];
 const FINGER_BASE = [6, 10, 14, 18];
 
+const overlay = document.createElement("div")
+overlay.style.cssText = `
+position: fixed;
+top: 20px;
+left: 20px;
+color:white;
+font-family: monospace;
+font-size: 18px;
+pointer-events: none;
+`
+app.appendChild(overlay)
+
 oscillator.connect(gainNode);
 gainNode.connect(audioCtx.destination);
 gainNode.gain.value = 0;
@@ -100,11 +112,11 @@ function loop() {
         ctx.fillStyle = "red";
         
         const fingers = countFingers(window.currentLandmarks);
-        const instrument = instruments[fingers];
+        const instrument = instruments[fingers] ?? instruments[1];
 
-        if (instrument){
-            oscillator.type = instrument.type;
-        }
+    
+        oscillator.type = instrument.type;
+        
         for (const point of window.currentLandmarks) {
             ctx.beginPath();
             ctx.arc((1 - point.x) * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
@@ -117,12 +129,15 @@ function loop() {
         const freq = 100 + x * 900;
         const vol = 1 - y;
 
+        overlay.textContent = `${instrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
+
         oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
         gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
     } else {
         gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
     }
 
+   
 
 requestAnimationFrame(loop);
 }
