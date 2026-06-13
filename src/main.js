@@ -46,9 +46,12 @@ async function startCamera() {
     video.srcObject = stream;
     await video.play();
 
-    await new Promise(resolve => {
+    if (!video.videoWidth){
+        await new Promise(resolve => {
         video.addEventListener("loadedmetadata", resolve, {once: true});
     });
+    }
+    
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -57,23 +60,19 @@ async function startCamera() {
 }
 
 function loop() {
-    if (video.videoWidth) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
 
-        ctx.drawImage(video, 0, 0);
-
-        if (window.currentLandmarks) {
-            ctx.fillStyle = "red";
-            for (const point of window.currentLandmarks) {
-                ctx.beginPath();
-                ctx.arc(point.x * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
-                ctx.fill();
-            }
+    if (window.currentLandmarks) {
+        ctx.fillStyle = "red";
+        for (const point of window.currentLandmarks) {
+            ctx.beginPath();
+            ctx.arc(point.x * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
 
-    requestAnimationFrame(loop);
+
+requestAnimationFrame(loop);
 }
 
 startCamera();
