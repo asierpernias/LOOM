@@ -1,22 +1,31 @@
 import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js";
+import * as Tone from "tone";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
 
-const audioCtx = new AudioContext();
-const gainNode = audioCtx.createGain();
-function createOscillator() {
-    const osc = audioCtx.createOscillator();
-    osc.connect(gainNode);
-    osc.start();
-    return osc;
-}
-let oscillator = createOscillator();
+const reverb = new Tone.Reverb({decay: 2, wet: 0}).toDestination();
+const delay = new Tone.FeedbackDelay({delayTime: 0, feedback: 0, wet:0}).toDestination();
 
-const instruments = {
-    1: {type: "sine", label:"Theremin"},
-    2: {type: "square", label:"Synth"},
-    3: {type: "sawtooth", label: "Bass"}
+const piano = new Tone.Sampler({
+    urls: {A4: "A4.mp3"},
+    baseUrl: "https://tonejs.github.io/audio/salamander/",
+}).connect(reverb).connect(delay);
+
+const synth = new Tone.PolySynth(Tone.Synth,{
+    oscillator: {type: "square"},
+    envelope: {attack: 0.1, decay: 0.2, sustain: 0.8, release: 1}
+}).connect(reverb).connect(delay);
+
+const bass = new Tone.MembraneSynth({
+    envelope: {attack: 0.01, decay: 0.4, sustain: 0.2, release:1}
+}).connect(reverb).connect(delay)
+
+
+const instrumentSamplers = {
+    1: piano,
+    2: synth,
+    3: bass
 };
 
 const FINGER_TIPS = [8, 12, 16, 20];
@@ -26,10 +35,13 @@ let handPresent = false;
 const FADE_FRAMES = 10;
 let fadeCounter
 
-let currentInstrument = instruments[1];
-let pendingInstrument = null;
+let currentFingers = 1;
+let pendingFingers = null;
 let instrumentCounter = 0;
-const INSTRUMEN_FRAMES = 1;
+const INSTRUMENT_FRAMES = 1;
+
+let lastNote = null;
+let lastSampler = null;
 
 let smoothX = 0;
 let smoothY = 0;
@@ -128,9 +140,11 @@ sidebar.innerHTML = `
     </label>
 `;
 app.appendChild(sidebar);
+sidebar.style.display = "none"
 
-welcome.querySelector("button").addEventListener("click", () => {
-    audioCtx.resume();
+welcome.querySelector("button").addEventListener("click", async () => {
+    await Tone.start();
+    sidebar.style.display = "flex"
     welcome.remove();
     startCamera();
 });
@@ -148,42 +162,6 @@ pointer-events: none;
 app.appendChild(overlay)
 
 
-gainNode.connect(audioCtx.destination);
-const convolver = audioCtx.createConvolver();
-const reverbGain = audioCtx.createGain();
-reverbGain.gain.value = 0;
-
-const bufferSize = audioCtx.sampleRate * 2;
-const buffer = audioCtx.createBuffer(2, bufferSize, audioCtx.sampleRate);
-for (let i = 0; i < 2; i++) {
-    const data = buffer.getChannelData(i);
-    for (let j = 0; j < bufferSize; j++) {
-        data[j] = (Math.random() * 2 - 1 )* Math.pow(1 - j / bufferSize, 2);
-    }
-}
-convolver.buffer = buffer;
-
-gainNode.connect(convolver);
-convolver.connect(reverbGain);
-reverbGain.connect(audioCtx.destination);
-
-const delayNode = audioCtx.createDelay(1.0)
-const feedbackNode = audioCtx.createGain();
-feedbackNode.gain.value = 0;
-delayNode.delayTime.value = 0;
-
-gainNode.connect(delayNode);
-delayNode.connect(feedbackNode);
-feedbackNode.connect(delayNode);
-delayNode.connect(audioCtx.destination);
-
-gainNode.gain.value = 0;
-
-document.addEventListener("click", () => {
-    if (audioCtx.state === "suspended") {
-        audioCtx.resume();
-    }
-}, {once: true})
 const video = document.createElement("video");
 video.autoplay = true;
 video.playsInline = true;
@@ -194,15 +172,15 @@ video.style.display = "none"
 app.appendChild(video);
 
 document.getElementById("reverbSlider").addEventListener("input", e => {
-    reverbGain.gain.value = parseFloat(e.target.value);
+    reverb.wet.value = parseFloat(e.target.value);
 });
 
 document.getElementById("delaySlider").addEventListener("input", e => {
-    delayNode.delayTime.value = parseFloat(e.target.value);
+    delay.delayTime.value = parseFloat(e.target.value);
 });
 
 document.getElementById("feedbackSlider").addEventListener("input", e => {
-    feedbackNode.gain.value = parseFloat(e.target.value);
+    delay.feedback.value = parseFloat(e.target.value);
 });
 
 document.getElementById("octaveSlider").addEventListener("input", e => {
@@ -273,41 +251,36 @@ function loop() {
     ctx.drawImage(video, -canvas.width, 0);
     ctx.restore();
 
-    const colors = {
-        "sine": "#00ff88",
-        "square": "#ff6600",
-        "sawtooth": "#ff00ff",
-    };
-
     if (window.currentLandmarks) {
-         handPresent = true;
         fadeCounter = FADE_FRAMES;
 
-        ctx.fillStyle = colors[oscillator.type] ?? "white";
+        ctx.fillStyle = ["#00ff88", "#ff6600", "#ff00ff"][currentFingers - 1] ?? "white";
         
         const fingers = countFingers(window.currentLandmarks);
-        const detected = instruments[fingers] ?? instruments[1];
         
-        if (detected.type !== currentInstrument.type) {
-            if (detected === pendingInstrument) {
+        if (fingers !== currentFingers) {
+            if (fingers === pendingFingers) {
                 instrumentCounter++;
-                if (instrumentCounter >= INSTRUMEN_FRAMES) {
-                    oscillator.stop();
-                    oscillator = createOscillator();
-                    oscillator.type = detected.type;
-                    currentInstrument = detected;
+                if (instrumentCounter >= INSTRUMENT_FRAMES) {
+                    if (lastSampler && lastNote) {
+                        if (lastSampler instanceof Tone.PolySynth || lastSampler instanceof Tone.Sampler) {
+                            lastSampler.triggerRelease(lastNote);
+                        } else {
+                            lastSampler.triggerRelease();
+                        }
+                    } 
+                    currentFingers = fingers;
                     instrumentCounter = 0;
                 }
             } else {
-                pendingInstrument = detected;
+                pendingFingers = fingers;
                 instrumentCounter = 0;
             }
-        } else {
-            pendingInstrument = null;
+        }
+        else {
+            pendingFingers = null;
             instrumentCounter = 0;
         }
-    
-        oscillator.type = currentInstrument.type;
         
         for (const point of window.currentLandmarks) {
             ctx.beginPath();
@@ -325,15 +298,41 @@ function loop() {
         const freq = getNote(smoothX);
         const vol = 1 - smoothY;
 
-        document.getElementById("instrumentDisplay").textContent = `${currentInstrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
 
-        oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
-        gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
-    } else {
+        const noteName = Tone.Frequency(freq).toNote();
+        document.getElementById("instrumentDisplay").textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
+
+        const sampler = instrumentSamplers[fingers] ?? instrumentSamplers[1];
+
+        Tone.getDestination().volume.rampTo(Tone.gainToDb(Math.max(0.001, vol)), 0.05);
+        
+        if (noteName !== lastNote || sampler !== lastSampler) {
+            if (lastSampler && lastNote){
+                 if (lastSampler instanceof Tone.PolySynth || lastSampler instanceof Tone.Sampler) {
+                    lastSampler.triggerRelease(lastNote);
+            } else {
+                lastSampler.triggerRelease();
+            }
+        }
+            sampler.triggerAttack(noteName);
+            lastNote = noteName;
+            lastSampler = sampler;
+        }
+
+        } else {
         if (fadeCounter > 0) {
             fadeCounter--;
         } else {
-             gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+            if (lastSampler && lastNote) {
+                if (lastSampler instanceof Tone.PolySynth || lastSampler instanceof Tone.Sampler) {
+                    lastSampler.triggerRelease(lastNote);
+                } else {
+                    lastSampler.triggerRelease();
+                }
+                lastNote = null;
+                lastSampler = null;
+            }
+            Tone.getDestination().volume.rampTo(-Infinity, 0.1);
             document.getElementById("instrumentDisplay").textContent = "---"
         }
      }
