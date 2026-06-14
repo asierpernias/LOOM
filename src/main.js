@@ -1,6 +1,7 @@
 import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js";
 
 const app = document.querySelector("#app");
+const canvas = document.createElement("canvas");
 
 const audioCtx = new AudioContext();
 const gainNode = audioCtx.createGain();
@@ -48,7 +49,7 @@ const NOTES = [
 function getNote(x) {
     const index = Math.floor(x * NOTES.length);
     const clamped = Math.max(0, Math.min(NOTES.length - 1, index));
-    return NOTES[clamped]
+    return NOTES[clamped] * (window.octaveMultiplier ?? 1);
 }
 const welcome = document.createElement("div")
 welcome.style.cssText = `
@@ -88,6 +89,46 @@ welcome.innerHTML = `
 
 app.appendChild(welcome)
 
+app.style.cssText = `
+    display: flex;
+    height: 100vh;
+`;
+
+canvas.style.cssText = `
+    display:block;
+    flex: 1;
+    border: none;
+`;
+
+const sidebar = document.createElement("div");
+sidebar.style.cssText = `
+    width: 280px;
+    background: #111;
+    color: white;
+    font-family: monospace;
+    padding: 20px;
+    display:flex;
+    flex-direction: column;
+    gap:24px;
+`;
+sidebar.innerHTML = `
+    <h2 style="margin:0; font-size:1rem; letter-spacing:2px;">OPTIONS</h2>
+    <div id="instrumentDisplay" style = "color: white; border: 1px solid #afafaf; padding: 10px; font-size: 1.1rem;">---</div>
+    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> REVERB
+        <input type="range" id="reverbSlider" min="0" max="1" step="0.01" value="0">
+    </label>
+    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> DELAY TIME
+        <input type="range" id="delaySlider" min="0" max="1" step="0.01" value="0">
+    </label>
+    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> DELAY FEEDBACK
+        <input type="range" id="feedbackSlider" min="0" max="0.9" step="0.01" value="0">
+    </label>
+    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> OCTAVE
+        <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
+    </label>
+`;
+app.appendChild(sidebar);
+
 welcome.querySelector("button").addEventListener("click", () => {
     audioCtx.resume();
     welcome.remove();
@@ -108,6 +149,34 @@ app.appendChild(overlay)
 
 
 gainNode.connect(audioCtx.destination);
+const convolver = audioCtx.createConvolver();
+const reverbGain = audioCtx.createGain();
+reverbGain.gain.value = 0;
+
+const bufferSize = audioCtx.sampleRate * 2;
+const buffer = audioCtx.createBuffer(2, bufferSize, audioCtx.sampleRate);
+for (let i = 0; i < 2; i++) {
+    const data = buffer.getChannelData(i);
+    for (let j = 0; j < bufferSize; j++) {
+        data[j] = (Math.random() * 2 - 1 )* Math.pow(1 - j / bufferSize, 2);
+    }
+}
+convolver.buffer = buffer;
+
+gainNode.connect(convolver);
+convolver.connect(reverbGain);
+reverbGain.connect(audioCtx.destination);
+
+const delayNode = audioCtx.createDelay(1.0)
+const feedbackNode = audioCtx.createGain();
+feedbackNode.gain.value = 0;
+delayNode.delayTime.value = 0;
+
+gainNode.connect(delayNode);
+delayNode.connect(feedbackNode);
+feedbackNode.connect(delayNode);
+delayNode.connect(audioCtx.destination);
+
 gainNode.gain.value = 0;
 
 document.addEventListener("click", () => {
@@ -124,11 +193,25 @@ video.style.display = "none"
 
 app.appendChild(video);
 
-const canvas = document.createElement("canvas");
-canvas.style.cssText = `
-    display: block;
-    border: none;
-    margin: 0px auto;`
+document.getElementById("reverbSlider").addEventListener("input", e => {
+    reverbGain.gain.value = parseFloat(e.target.value);
+});
+
+document.getElementById("delaySlider").addEventListener("input", e => {
+    delayNode.delayTime.value = parseFloat(e.target.value);
+});
+
+document.getElementById("feedbackSlider").addEventListener("input", e => {
+    feedbackNode.gain.value = parseFloat(e.target.value);
+});
+
+document.getElementById("octaveSlider").addEventListener("input", e => {
+    const multiplier = Math.pow(2, parseInt(e.target.value) - 1);
+    window.octaveMultiplier = multiplier;
+});
+
+
+
 app.appendChild(canvas);
 
 const ctx = canvas.getContext("2d");
@@ -199,7 +282,7 @@ function loop() {
     if (window.currentLandmarks) {
          handPresent = true;
         fadeCounter = FADE_FRAMES;
-        
+
         ctx.fillStyle = colors[oscillator.type] ?? "white";
         
         const fingers = countFingers(window.currentLandmarks);
@@ -242,7 +325,7 @@ function loop() {
         const freq = getNote(smoothX);
         const vol = 1 - smoothY;
 
-        overlay.textContent = `${currentInstrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
+        document.getElementById("instrumentDisplay").textContent = `${currentInstrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
 
         oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
         gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
@@ -251,7 +334,7 @@ function loop() {
             fadeCounter--;
         } else {
              gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
-            overlay.textContent = "---"
+            document.getElementById("instrumentDisplay").textContent = "---"
         }
      }
 
