@@ -15,6 +15,11 @@ const instruments = {
 const FINGER_TIPS = [8, 12, 16, 20];
 const FINGER_BASE = [6, 10, 14, 18];
 
+let smoothX = 0;
+let smoothY = 0;
+const SMOOTH = 0.1;
+
+
 const overlay = document.createElement("div")
 overlay.style.cssText = `
 position: fixed;
@@ -108,8 +113,13 @@ function loop() {
     ctx.drawImage(video, -canvas.width, 0);
     ctx.restore();
 
+    const colors = {
+        "sine": "#00ff88",
+        "square": "#ff6600",
+        "sawtooth": "#ff00ff",
+    };
     if (window.currentLandmarks) {
-        ctx.fillStyle = "red";
+        ctx.fillStyle = colors[oscillator.type] ?? "white";
         
         const fingers = countFingers(window.currentLandmarks);
         const instrument = instruments[fingers] ?? instruments[1];
@@ -124,10 +134,14 @@ function loop() {
         }
 
         const wrist = window.currentLandmarks[0];
-        const x = 1 - wrist.x;
-        const y = wrist.y;
-        const freq = 100 + x * 900;
-        const vol = 1 - y;
+        const rawX = 1 - wrist.x;
+        const rawY = wrist.y;
+        
+        smoothX += (rawX - smoothX) * SMOOTH;
+        smoothY += (rawY - smoothY) * SMOOTH;
+
+        const freq = 100 + smoothX * 900;
+        const vol = 1 - smoothY;
 
         overlay.textContent = `${instrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
 
