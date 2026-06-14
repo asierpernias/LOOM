@@ -15,10 +15,62 @@ const instruments = {
 const FINGER_TIPS = [8, 12, 16, 20];
 const FINGER_BASE = [6, 10, 14, 18];
 
+let handPresent = false;
+const FADE_FRAMES = 10;
+let fadeCounter
+
+let currentInstrument = instruments[1];
+let pendingInstrument = null;
+let instrumentCounter = 0;
+const INSTRUMEN_FRAMES = 5;
+
 let smoothX = 0;
 let smoothY = 0;
 const SMOOTH = 0.1;
 
+const welcome = document.createElement("div")
+welcome.style.cssText = `
+    position:fixed;
+    inset:0;
+    background: rgba(0,0,0,0.85);
+    color:white;
+    font-family:monospace;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index:10;
+    `;
+
+welcome.innerHTML = `
+     <h1 style="font-size: 2rem; margin:0;">THEREMIN</h1>
+    <p style="text-align:center; line-height:1.6;">
+        1 finger - Theremin (sine) <br>
+        2 fingers - Synth (square) <br>
+        3 fingers - Bass (sawtooth) <br> </br>
+        Move your hand to control pitch and volume
+    </p>
+    <button style="
+    background: white;
+    color: black;
+    border: none;
+    padding: 12px 32px;
+    font-family: monospace;
+    font-size:1rem; 
+    cursor: pointer;
+    ">START</button>
+
+    
+    `;
+
+app.appendChild(welcome)
+
+welcome.querySelector("button").addEventListener("click", () => {
+    audioCtx.resume();
+    welcome.remove();
+    startCamera();
+});
 
 const overlay = document.createElement("div")
 overlay.style.cssText = `
@@ -52,6 +104,10 @@ video.style.display = "none"
 app.appendChild(video);
 
 const canvas = document.createElement("canvas");
+canvas.style.cssText = `
+    display: block;
+    border: none;
+    margin: 0px auto;`
 app.appendChild(canvas);
 
 const ctx = canvas.getContext("2d");
@@ -118,14 +174,33 @@ function loop() {
         "square": "#ff6600",
         "sawtooth": "#ff00ff",
     };
+
+    handPresent = true;
+    fadeCounter = FADE_FRAMES;
+
     if (window.currentLandmarks) {
         ctx.fillStyle = colors[oscillator.type] ?? "white";
         
         const fingers = countFingers(window.currentLandmarks);
-        const instrument = instruments[fingers] ?? instruments[1];
-
+        const detected = instruments[fingers] ?? instruments[1];
+        
+        if (detected.type !== currentInstrument.type) {
+            if (detected === pendingInstrument) {
+                instrumentCounter++;
+                if (instrumentCounter >= INSTRUMEN_FRAMES) {
+                    currentInstrument = detected;
+                    instrumentCounter = 0;
+                }
+            } else {
+                pendingInstrument = detected;
+                instrumentCounter = 0;
+            }
+        } else {
+            pendingInstrument = null;
+            instrumentCounter = 0;
+        }
     
-        oscillator.type = instrument.type;
+        oscillator.type = currentInstrument.type;
         
         for (const point of window.currentLandmarks) {
             ctx.beginPath();
@@ -143,17 +218,21 @@ function loop() {
         const freq = 100 + smoothX * 900;
         const vol = 1 - smoothY;
 
-        overlay.textContent = `${instrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
+        overlay.textContent = `${currentInstrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
 
         oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
         gainNode.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.05);
     } else {
-        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
-    }
+        if (fadeCounter > 0) {
+            fadeCounter--;
+        } else {
+             gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+            overlay.textContent = "---"
+        }
+     }
 
    
 
 requestAnimationFrame(loop);
 }
 
-startCamera();
