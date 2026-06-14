@@ -3,8 +3,14 @@ import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 const app = document.querySelector("#app");
 
 const audioCtx = new AudioContext();
-const oscillator = audioCtx.createOscillator();
 const gainNode = audioCtx.createGain();
+function createOscillator() {
+    const osc = audioCtx.createOscillator();
+    osc.connect(gainNode);
+    osc.start();
+    return osc;
+}
+let oscillator = createOscillator();
 
 const instruments = {
     1: {type: "sine", label:"Theremin"},
@@ -22,12 +28,28 @@ let fadeCounter
 let currentInstrument = instruments[1];
 let pendingInstrument = null;
 let instrumentCounter = 0;
-const INSTRUMEN_FRAMES = 5;
+const INSTRUMEN_FRAMES = 1;
 
 let smoothX = 0;
 let smoothY = 0;
 const SMOOTH = 0.1;
 
+const NOTES = [
+    261.63,
+    293.66,
+    329.63,
+    349.23,
+    392.00,
+    440.00,
+    493.88,
+    523.25
+];
+
+function getNote(x) {
+    const index = Math.floor(x * NOTES.length);
+    const clamped = Math.max(0, Math.min(NOTES.length - 1, index));
+    return NOTES[clamped]
+}
 const welcome = document.createElement("div")
 welcome.style.cssText = `
     position:fixed;
@@ -84,10 +106,9 @@ pointer-events: none;
 `
 app.appendChild(overlay)
 
-oscillator.connect(gainNode);
+
 gainNode.connect(audioCtx.destination);
 gainNode.gain.value = 0;
-oscillator.start();
 
 document.addEventListener("click", () => {
     if (audioCtx.state === "suspended") {
@@ -175,10 +196,10 @@ function loop() {
         "sawtooth": "#ff00ff",
     };
 
-    handPresent = true;
-    fadeCounter = FADE_FRAMES;
-
     if (window.currentLandmarks) {
+         handPresent = true;
+        fadeCounter = FADE_FRAMES;
+        
         ctx.fillStyle = colors[oscillator.type] ?? "white";
         
         const fingers = countFingers(window.currentLandmarks);
@@ -188,6 +209,9 @@ function loop() {
             if (detected === pendingInstrument) {
                 instrumentCounter++;
                 if (instrumentCounter >= INSTRUMEN_FRAMES) {
+                    oscillator.stop();
+                    oscillator = createOscillator();
+                    oscillator.type = detected.type;
                     currentInstrument = detected;
                     instrumentCounter = 0;
                 }
@@ -215,7 +239,7 @@ function loop() {
         smoothX += (rawX - smoothX) * SMOOTH;
         smoothY += (rawY - smoothY) * SMOOTH;
 
-        const freq = 100 + smoothX * 900;
+        const freq = getNote(smoothX);
         const vol = 1 - smoothY;
 
         overlay.textContent = `${currentInstrument.label} | ${Math.round(freq)}hz | vol: ${vol.toFixed(2)} `;
