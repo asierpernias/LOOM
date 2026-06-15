@@ -1,62 +1,24 @@
 import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js";
-import * as Tone from "tone";
+
+import  {NOTES, FINGER_BASE, FINGER_TIPS, FADE_FRAMES, INSTRUMENT_FRAMES, SMOOTH } from "./config.js"
+import  { freqToNote, instrumentSamplers, setReverb, setDelayTime, setDelayFeedback, setVolume, releaseNote, silenceVolume} from "./audio.js"
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
 
-const reverb = new Tone.Reverb({decay: 2, wet: 0}).toDestination();
-const delay = new Tone.FeedbackDelay({delayTime: 0, feedback: 0, wet:0}).toDestination();
-
-const piano = new Tone.Sampler({
-    urls: {A4: "A4.mp3"},
-    baseUrl: "https://tonejs.github.io/audio/salamander/",
-}).connect(reverb).connect(delay);
-
-const synth = new Tone.PolySynth(Tone.Synth,{
-    oscillator: {type: "square"},
-    envelope: {attack: 0.1, decay: 0.2, sustain: 0.8, release: 1}
-}).connect(reverb).connect(delay);
-
-const bass = new Tone.MembraneSynth({
-    envelope: {attack: 0.01, decay: 0.4, sustain: 0.2, release:1}
-}).connect(reverb).connect(delay)
-
-
-const instrumentSamplers = {
-    1: piano,
-    2: synth,
-    3: bass
-};
-
-const FINGER_TIPS = [8, 12, 16, 20];
-const FINGER_BASE = [6, 10, 14, 18];
 
 let handPresent = false;
-const FADE_FRAMES = 10;
 let fadeCounter
 
 let currentFingers = 1;
 let pendingFingers = null;
 let instrumentCounter = 0;
-const INSTRUMENT_FRAMES = 1;
 
 let lastNote = null;
 let lastSampler = null;
 
 let smoothX = 0;
 let smoothY = 0;
-const SMOOTH = 0.1;
-
-const NOTES = [
-    261.63,
-    293.66,
-    329.63,
-    349.23,
-    392.00,
-    440.00,
-    493.88,
-    523.25
-];
 
 function getNote(x) {
     const index = Math.floor(x * NOTES.length);
@@ -143,7 +105,7 @@ app.appendChild(sidebar);
 sidebar.style.display = "none"
 
 welcome.querySelector("button").addEventListener("click", async () => {
-    await Tone.start();
+    await import("tone").then(t => t.start());
     sidebar.style.display = "flex"
     welcome.remove();
     startCamera();
@@ -171,17 +133,14 @@ video.style.display = "none"
 
 app.appendChild(video);
 
-document.getElementById("reverbSlider").addEventListener("input", e => {
-    reverb.wet.value = parseFloat(e.target.value);
-});
+document.getElementById("reverbSlider").addEventListener("input", e => 
+    setReverb(parseFloat(e.target.value)));
 
-document.getElementById("delaySlider").addEventListener("input", e => {
-    delay.delayTime.value = parseFloat(e.target.value);
-});
+document.getElementById("delaySlider").addEventListener("input", e => 
+    setDelayTime(parseFloat(e.target.value)));
 
-document.getElementById("feedbackSlider").addEventListener("input", e => {
-    delay.feedback.value = parseFloat(e.target.value);
-});
+document.getElementById("feedbackSlider").addEventListener("input", e => 
+    setDelayFeedback(parseFloat(e.target.value)));
 
 document.getElementById("octaveSlider").addEventListener("input", e => {
     const multiplier = Math.pow(2, parseInt(e.target.value) - 1);
@@ -263,11 +222,7 @@ function loop() {
                 instrumentCounter++;
                 if (instrumentCounter >= INSTRUMENT_FRAMES) {
                     if (lastSampler && lastNote) {
-                        if (lastSampler instanceof Tone.PolySynth || lastSampler instanceof Tone.Sampler) {
-                            lastSampler.triggerRelease(lastNote);
-                        } else {
-                            lastSampler.triggerRelease();
-                        }
+                        releaseNote(lastSampler, lastNote);
                     } 
                     currentFingers = fingers;
                     instrumentCounter = 0;
@@ -299,20 +254,16 @@ function loop() {
         const vol = 1 - smoothY;
 
 
-        const noteName = Tone.Frequency(freq).toNote();
+        const noteName = freqToNote(freq);
         document.getElementById("instrumentDisplay").textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
 
         const sampler = instrumentSamplers[fingers] ?? instrumentSamplers[1];
 
-        Tone.getDestination().volume.rampTo(Tone.gainToDb(Math.max(0.001, vol)), 0.05);
-        
+        setVolume(vol);
+
         if (noteName !== lastNote || sampler !== lastSampler) {
             if (lastSampler && lastNote){
-                 if (lastSampler instanceof Tone.PolySynth || lastSampler instanceof Tone.Sampler) {
-                    lastSampler.triggerRelease(lastNote);
-            } else {
-                lastSampler.triggerRelease();
-            }
+                releaseNote(lastSampler, lastNote);
         }
             sampler.triggerAttack(noteName);
             lastNote = noteName;
@@ -324,15 +275,12 @@ function loop() {
             fadeCounter--;
         } else {
             if (lastSampler && lastNote) {
-                if (lastSampler instanceof Tone.PolySynth || lastSampler instanceof Tone.Sampler) {
-                    lastSampler.triggerRelease(lastNote);
-                } else {
-                    lastSampler.triggerRelease();
-                }
+                releaseNote(lastSampler, lastNote);
                 lastNote = null;
                 lastSampler = null;
             }
-            Tone.getDestination().volume.rampTo(-Infinity, 0.1);
+           silenceVolume();
+
             document.getElementById("instrumentDisplay").textContent = "---"
         }
      }
