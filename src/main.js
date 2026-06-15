@@ -1,6 +1,6 @@
 import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js";
 
-import  {NOTES, FINGER_BASE, FINGER_TIPS, FADE_FRAMES, INSTRUMENT_FRAMES, SMOOTH } from "./config.js"
+import  {HAND_CONNECTIONS, NOTES, FINGER_BASE, FINGER_TIPS, FADE_FRAMES, INSTRUMENT_FRAMES, SMOOTH } from "./config.js"
 import  { freqToNote, instrumentSamplers, setReverb, setDelayTime, setDelayFeedback, setVolume, releaseNote, silenceVolume} from "./audio.js"
 
 const app = document.querySelector("#app");
@@ -8,7 +8,7 @@ const canvas = document.createElement("canvas");
 
 
 let handPresent = false;
-let fadeCounter
+let fadeCounter = 0;
 
 let currentFingers = 1;
 let pendingFingers = null;
@@ -162,6 +162,7 @@ function countFingers(landmarks) {
     }
     return count;
 }
+
 async function initHandDetection() {
     const vision = await FilesetResolver.forVisionTasks(
          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
@@ -181,8 +182,6 @@ async function initHandDetection() {
     detect();
 }
 
-initHandDetection();
-
 async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({
         video: true
@@ -190,6 +189,7 @@ async function startCamera() {
 
     video.srcObject = stream;
     await video.play();
+    await initHandDetection();
 
     if (!video.videoWidth){
         await new Promise(resolve => {
@@ -203,7 +203,6 @@ async function startCamera() {
 
     loop();
 }
-
 function loop() {
     ctx.save();
     ctx.scale(-1, 1);
@@ -243,6 +242,18 @@ function loop() {
             ctx.fill();
         }
 
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = 2;
+
+        for (const [a, b] of HAND_CONNECTIONS) {
+            const pa = window.currentLandmarks[a];
+            const pb = window.currentLandmarks[b];
+            ctx.beginPath();
+            ctx.moveTo((1 - pa.x) * canvas.width, pa.y * canvas.height);
+            ctx.lineTo((1 - pb.x) * canvas.width, pb.y * canvas.height);
+            ctx.stroke();
+        }
+
         const wrist = window.currentLandmarks[0];
         const rawX = 1 - wrist.x;
         const rawY = wrist.y;
@@ -269,7 +280,7 @@ function loop() {
             lastNote = noteName;
             lastSampler = sampler;
         }
-
+        
         } else {
         if (fadeCounter > 0) {
             fadeCounter--;
@@ -283,10 +294,7 @@ function loop() {
 
             document.getElementById("instrumentDisplay").textContent = "---"
         }
-     }
-
-   
+    }
 
 requestAnimationFrame(loop);
 }
-
