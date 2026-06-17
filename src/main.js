@@ -1,13 +1,15 @@
-import {HandLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js";
-
-import  {HAND_CONNECTIONS, NOTES, FINGER_BASE, FINGER_TIPS, FADE_FRAMES, INSTRUMENT_FRAMES, SMOOTH } from "./config.js"
-import  { freqToNote, instrumentSamplers, setReverb, setDelayTime, setDelayFeedback, setVolume, releaseNote, silenceVolume} from "./audio.js"
+import  { NOTES, FADE_FRAMES, INSTRUMENT_FRAMES, SMOOTH } from "./config.js"
+import {audioEngine} from "./core/AudioEngine.js";
+import {freqToNote, instrumentSamplers, releaseNote } from "./instrumental/Instruments.js";
+import { HandRenderer } from "./gesture/HandRenderer.js";
+import { GestureManager } from "./gesture/GestureManager.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
+const gestureManager = new GestureManager();
+const handRenderer = new HandRenderer(canvas);
 
 
-let handPresent = false;
 let fadeCounter = 0;
 
 let currentFingers = 1;
@@ -108,113 +110,45 @@ welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
     sidebar.style.display = "flex"
     welcome.remove();
-    startCamera();
+    startApp();
 });
 
-const overlay = document.createElement("div")
-overlay.style.cssText = `
-position: fixed;
-top: 20px;
-left: 20px;
-color:white;
-font-family: monospace;
-font-size: 18px;
-pointer-events: none;
-`
-app.appendChild(overlay)
-
-
-const video = document.createElement("video");
-video.autoplay = true;
-video.playsInline = true;
-
-video.style.display = "none"
-
-
-app.appendChild(video);
-
 document.getElementById("reverbSlider").addEventListener("input", e => 
-    setReverb(parseFloat(e.target.value)));
+    audioEngine.setReverb(parseFloat(e.target.value)));
 
 document.getElementById("delaySlider").addEventListener("input", e => 
-    setDelayTime(parseFloat(e.target.value)));
+    audioEngine.setDelayTime(parseFloat(e.target.value)));
 
 document.getElementById("feedbackSlider").addEventListener("input", e => 
-    setDelayFeedback(parseFloat(e.target.value)));
+    audioEngine.setDelayFeedback(parseFloat(e.target.value)));
 
 document.getElementById("octaveSlider").addEventListener("input", e => {
     const multiplier = Math.pow(2, parseInt(e.target.value) - 1);
     window.octaveMultiplier = multiplier;
 });
 
-
-
 app.appendChild(canvas);
 
-const ctx = canvas.getContext("2d");
+gestureManager.mount(app);
 
-function countFingers(landmarks) {
-    let count = 0;
-    for (let i = 0; i < FINGER_TIPS.length; i++) {
-        if (landmarks[FINGER_TIPS[i]].y < landmarks[FINGER_BASE[i]].y) {
-            count ++;
-        }
-    }
-    return count;
-}
-
-async function initHandDetection() {
-    const vision = await FilesetResolver.forVisionTasks(
-         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-    );
-    const handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"},
-        numHands: 1, 
-        runningMode: "VIDEO"
-    });
-    function detect() {
-        if (video.readyState >= 2){
-            const result = handLandmarker.detectForVideo(video, performance.now());
-        window.currentLandmarks = result.landmarks[0] ?? null;
-        }
-        requestAnimationFrame(detect);
-    }
-    detect();
-}
-
-async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true
-    });
-
-    video.srcObject = stream;
-    await video.play();
-    await initHandDetection();
-
-    if (!video.videoWidth){
-        await new Promise(resolve => {
-        video.addEventListener("loadedmetadata", resolve, {once: true});
-    });
-    }
-    
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
+async function startApp() {
+    const {width, height} = await gestureManager.start();
+    handRenderer.resize(width, height);
     loop();
 }
-function loop() {
-    ctx.save();
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, -canvas.width, 0);
-    ctx.restore();
 
-    if (window.currentLandmarks) {
+function loop() {
+    const video = gestureManager.getVideoElement();
+    const landmarks = gestureManager.getLandmarks();
+
+    handRenderer.drawVideoFrame(video);
+
+    if (landmarks) {
         fadeCounter = FADE_FRAMES;
 
-        ctx.fillStyle = ["#00ff88", "#ff6600", "#ff00ff"][currentFingers - 1] ?? "white";
+        const color = ["#00ff88", "#ff6600", "#ff00ff"][currentFingers - 1] ?? "white";
         
-        const fingers = countFingers(window.currentLandmarks);
+        const fingers = GestureManager.countFingers(landmarks);
         
         if (fingers !== currentFingers) {
             if (fingers === pendingFingers) {
@@ -236,25 +170,9 @@ function loop() {
             instrumentCounter = 0;
         }
         
-        for (const point of window.currentLandmarks) {
-            ctx.beginPath();
-            ctx.arc((1 - point.x) * canvas.width, point.y * canvas.height, 8, 0, Math.PI * 2);
-            ctx.fill();
-        }
+        handRenderer.drawHand(landmarks, color);
 
-        ctx.strokeStyle = ctx.fillStyle;
-        ctx.lineWidth = 2;
-
-        for (const [a, b] of HAND_CONNECTIONS) {
-            const pa = window.currentLandmarks[a];
-            const pb = window.currentLandmarks[b];
-            ctx.beginPath();
-            ctx.moveTo((1 - pa.x) * canvas.width, pa.y * canvas.height);
-            ctx.lineTo((1 - pb.x) * canvas.width, pb.y * canvas.height);
-            ctx.stroke();
-        }
-
-        const wrist = window.currentLandmarks[0];
+        const wrist = landmarks[0];
         const rawX = 1 - wrist.x;
         const rawY = wrist.y;
         
@@ -270,7 +188,7 @@ function loop() {
 
         const sampler = instrumentSamplers[fingers] ?? instrumentSamplers[1];
 
-        setVolume(vol);
+        audioEngine.setVolume(vol);
 
         if (noteName !== lastNote || sampler !== lastSampler) {
             if (lastSampler && lastNote){
@@ -290,11 +208,12 @@ function loop() {
                 lastNote = null;
                 lastSampler = null;
             }
-           silenceVolume();
+           audioEngine.silence();
 
             document.getElementById("instrumentDisplay").textContent = "---"
         }
     }
+
 
 requestAnimationFrame(loop);
 }
