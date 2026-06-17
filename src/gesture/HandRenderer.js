@@ -22,12 +22,25 @@ export class HandRenderer {
         ctx.lineWidth = 2;
         for (const [a, b] of HAND_CONNECTIONS) {
             const pa = landmarks[a];
-            const pb = landmarks[p];
+            const pb = landmarks[b];
             ctx.beginPath();
             ctx.moveTo((1 - pa.x) * width, pa.y * height);
             ctx.lineTo((1 - pb.x) * width, pb.y * height);
             ctx.stroke();
         }
+    }
+    
+    resize(width, height) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+    }
+
+    drawVideoFrame(video) {
+        const ctx = this.ctx;
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, -this.canvas.width, 0);
+        ctx.restore();
     }
 
 }
