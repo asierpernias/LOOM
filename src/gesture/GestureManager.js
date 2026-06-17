@@ -31,6 +31,8 @@ export class GestureManager {
         this.video.srcObject = stream;
         await this.video.play();
 
+        this._running = true;
+
         await this._initHandDetection();
 
         if (!this.video.videoWidth) {
@@ -39,7 +41,6 @@ export class GestureManager {
             });
         }
 
-        this._running = true;
         return  {width: this.video.videoWidth, height: this.video.videoHeight};
 
     }
