@@ -3,11 +3,19 @@ import {audioEngine} from "./core/AudioEngine.js";
 import {freqToNote, instrumentSamplers, releaseNote } from "./instrumental/Instruments.js";
 import { HandRenderer } from "./gesture/HandRenderer.js";
 import { GestureManager } from "./gesture/GestureManager.js";
+import {Track} from "./models/Track.js";
+import {recorderEngine} from "./core/RecorderEngine.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
 const gestureManager = new GestureManager();
 const handRenderer = new HandRenderer(canvas);
+
+const tracks = {
+    1: new Track({name: "Piano", instrument: "piano"}),
+    2: new Track({name: "Synth",  instrument: "synth"}),
+    3: new Track({name: "Bass", instrument: "bass"})
+};
 
 
 let fadeCounter = 0;
@@ -102,6 +110,22 @@ sidebar.innerHTML = `
     <label style="color:white; display:flex; flex-direction:column; gap:8px;"> OCTAVE
         <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
     </label>
+    <div style="display:flex, flex-direction:column, gap:8px;">
+        <label style="color: white;">ARMAR PISTA</label>
+        <select id="armSelect">
+            <option value="1">Piano</option>
+            <option value="2">Synth</option>
+            <option value="3">Bass</option>
+        </select>
+        <button id="recButton" style="
+        background: #ff4444;
+        color:white;
+        border: none;
+        padding: 10px;
+        font-family: monospace;
+        cursor: pointer;
+        "> REC </button>
+    </div>
 `;
 app.appendChild(sidebar);
 sidebar.style.display = "none"

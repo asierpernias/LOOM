@@ -5,7 +5,7 @@ class AudioEngine {
         this.reverb = new Tone.Reverb({decay: 2, wet: 0});
         this.delay = new Tone.FeedbackDelay({delayTime: 0, feedback: 0, wet: 0});
 
-        // Cadena: instrumento -> reverb -> delay -> destino real
+        
         this.reverb.connect(this.delay);
         this.delay.toDestination();
     }
