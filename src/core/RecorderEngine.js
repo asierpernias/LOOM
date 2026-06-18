@@ -19,7 +19,7 @@ export class RecorderEngine {
     }
 
     isArmed(track) {
-        return this.armedTrack?.id === track.id;
+        return track && this.armedTrack?.id === track.id;
     }
 
     start() {
@@ -36,6 +36,7 @@ export class RecorderEngine {
     noteOn(note, {velocity = 1, instrument = null} = {}) {
         if (!this.recording) return;
         this._openNotes.set(note, {
+            start: Tone.now() - this._startTime,
             velocity,
             instrument
         });
@@ -82,7 +83,7 @@ export class RecorderEngine {
             notes: this._events
         });
 
-        if(history.armedTrack) {
+        if(this.armedTrack) {
             this.armedTrack.addClip(clip);
         }
 
@@ -108,7 +109,7 @@ export class RecorderEngine {
                 );
             }
         }, clip.duration);
-        cli.audioData = buffer.get();
+        clip.audioData = buffer.get();
         return clip.audioData;
     }
 
