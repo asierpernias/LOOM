@@ -25,7 +25,7 @@ export class Track {
         return this.clips.find(c => c.id === clipId) ?? null;
     }
 
-    setVolume(value) {
+    setLiveVolume(value) {
         this.volume = Math.max(0, Math.min(1, value));
     }
 

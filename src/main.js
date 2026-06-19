@@ -177,7 +177,9 @@ document.getElementById("recButton").addEventListener("click", async e =>{
         await recorderEngine.renderClip(clip, InstrumentFactory);
         console.log("Clip renderizado:", clip.audioData);
         
-        const player = new Tone.Player(clip.audioData).toDestination();
+        const player = new Tone.Player().connect(audioEngine.playbackChannel);
+        player.buffer = clip.audioData;
+        audioEngine.setPlaybackVolume(1);
         player.start();
     }
 });
@@ -244,7 +246,7 @@ function loop() {
 
         const sampler = instrumentSamplers[fingers] ?? instrumentSamplers[1];
 
-        audioEngine.setVolume(vol);
+        audioEngine.setLiveVolume(vol);
 
         if (noteName !== lastNote || sampler !== lastSampler) {
             if (lastSampler && lastNote){
@@ -276,7 +278,7 @@ function loop() {
                 lastNote = null;
                 lastSampler = null;
             }
-           audioEngine.silence();
+           audioEngine.silenceLive();
 
             document.getElementById("instrumentDisplay").textContent = "---"
         }

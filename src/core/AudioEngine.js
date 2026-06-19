@@ -2,9 +2,11 @@ import * as Tone from "tone";
 
 class AudioEngine {
     constructor() {
+        this.liveChannel = new Tone.Channel({volume: 0}).toDestination();
+        this.playbackChannel = new Tone.Channel({volume: 0}).toDestination();
+
         this.reverb = new Tone.Reverb({decay: 2, wet: 0});
         this.delay = new Tone.FeedbackDelay({delayTime: 0, feedback: 0, wet: 0});
-
         
         this.reverb.connect(this.delay);
         this.delay.toDestination();
@@ -22,12 +24,16 @@ class AudioEngine {
         this.delay.feedback.value = val;
     }
 
-    setVolume(vol) {
-        Tone.getDestination().volume.rampTo(Tone.gainToDb(Math.max(0.000001, vol)), 0.05);
+    setLiveVolume(vol) {
+        this.liveChannel.volume.rampTo(Tone.gainToDb(Math.max(0.000001, vol)), 0.05);
     }
 
-    silence() {
-        Tone.getDestination().volume.rampTo(-Infinity, 0.1);
+    silenceLive() {
+        this.liveChannel.volume.rampTo(-Infinity, 0.1);
+    }
+
+    setPlaybackVolume(vol) {
+        this.playbackChannel.volume.rampTo(Tone.gainToDb(Math.max(0.0000001, vol)), 0.05);
     }
 }
 
