@@ -5,6 +5,8 @@ import { HandRenderer } from "./gesture/HandRenderer.js";
 import { GestureManager } from "./gesture/GestureManager.js";
 import {Track} from "./models/Track.js";
 import {recorderEngine} from "./core/RecorderEngine.js";
+import * as Tone from "tone";
+import { InstrumentFactory } from "./instrumental/Instruments.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
@@ -158,7 +160,7 @@ document.getElementById("armSelect").addEventListener("change", e => {
     recorderEngine.arm(tracks[fingerCount]);
 });
 
-document.getElementById("recButton").addEventListener("click", e =>{
+document.getElementById("recButton").addEventListener("click", async e =>{
     const btn = document.getElementById("recButton");
     if (!isRecording) {
         recorderEngine.start();
@@ -171,6 +173,12 @@ document.getElementById("recButton").addEventListener("click", e =>{
         btn.textContent = "REC";
         btn.style.background = "#ff4444";
         console.log("Clip grabado:", clip);
+
+        await recorderEngine.renderClip(clip, InstrumentFactory);
+        console.log("Clip renderizado:", clip.audioData);
+        
+        const player = new Tone.Player(clip.audioData).toDestination();
+        player.start();
     }
 });
 

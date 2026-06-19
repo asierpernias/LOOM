@@ -28,3 +28,26 @@ export function releaseNote(sampler, note) {
 
 export function freqToNote(freq) { return Tone.Frequency(freq).toNote();}
 
+export function InstrumentFactory(instrumentName) {
+    switch (instrumentName) {
+        case "piano":
+            return new Tone.PolySynth(Tone.Synth, {
+                oscillator: {type: "triangle"},
+                envelope: {attack: 0.02, decay: 0.3, sustain:0.9, release: 0.5}
+            });
+        case "synth":
+            return new Tone.PolySynth(Tone.Synth, {
+                oscillator: {type: "square"},
+                envelope: {attack: 0.1, decay: 0.2, sustain: 0.8, release: 1}
+            });
+        case "bass":
+            return new Tone.PolySynth(Tone.FMSynth, {
+                harmonicity: 2,
+                modulationIndex: 8,
+                envelope: {attack: 0.02, decay: 0.3, sustain: 0.9, release: 0.5},
+                modulationEnvelope: {attack: 0.02, decay: 0.3, sustain: 0.9, release: 0.5}
+            });
+        default:
+            return new Tone.PolySynth(Tone.Synth);
+    }
+}
