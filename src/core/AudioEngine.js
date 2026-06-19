@@ -9,7 +9,7 @@ class AudioEngine {
         this.delay = new Tone.FeedbackDelay({delayTime: 0, feedback: 0, wet: 0});
         
         this.reverb.connect(this.delay);
-        this.delay.toDestination();
+        this.delay.connect(this.liveChannel);
     }
 
     setReverb(val) {
