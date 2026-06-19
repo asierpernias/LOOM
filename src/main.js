@@ -3,7 +3,7 @@ import {audioEngine} from "./core/AudioEngine.js";
 import {freqToNote, instrumentSamplers, releaseNote } from "./instrumental/Instruments.js";
 import { HandRenderer } from "./gesture/HandRenderer.js";
 import { GestureManager } from "./gesture/GestureManager.js";
-import {Track} from "./models/Track.js";
+import {trackManager} from "./core/TrackManager.js";
 import {recorderEngine} from "./core/RecorderEngine.js";
 import * as Tone from "tone";
 import { InstrumentFactory } from "./instrumental/Instruments.js";
@@ -14,9 +14,9 @@ const gestureManager = new GestureManager();
 const handRenderer = new HandRenderer(canvas);
 
 const tracks = {
-    1: new Track({name: "Piano", instrument: "piano"}),
-    2: new Track({name: "Synth",  instrument: "synth"}),
-    3: new Track({name: "Bass", instrument: "bass"})
+    1: new trackManager.createTrack({name: "Piano", instrument: "piano"}),
+    2: new trackManager.createTrack({name: "Synth",  instrument: "synth"}),
+    3: new trackManager.createTrack({name: "Bass", instrument: "bass"})
 };
 recorderEngine.arm(tracks[1]);
 
