@@ -16,7 +16,7 @@ const tracks = {
     2: new Track({name: "Synth",  instrument: "synth"}),
     3: new Track({name: "Bass", instrument: "bass"})
 };
-
+recorderEngine.arm(tracks[1]);
 
 let fadeCounter = 0;
 
@@ -151,6 +151,30 @@ document.getElementById("octaveSlider").addEventListener("input", e => {
     window.octaveMultiplier = multiplier;
 });
 
+let isRecording = false;
+
+document.getElementById("armSelect").addEventListener("change", e => {
+    const fingerCount = parseInt(e.target.value);
+    recorderEngine.arm(tracks[fingerCount]);
+});
+
+document.getElementById("recButton").addEventListener("click", e =>{
+    const btn = document.getElementById("recButton");
+    if (!isRecording) {
+        recorderEngine.start();
+        isRecording = true;
+        btn.textContent = "STOP";
+        btn.style.background = "#444";
+    } else {
+        const clip = recorderEngine.stop();
+        isRecording = false;
+        btn.textContent = "REC";
+        btn.style.background = "#ff4444";
+        console.log("Clip grabado:", clip);
+    }
+});
+
+
 app.appendChild(canvas);
 
 gestureManager.mount(app);
@@ -217,10 +241,19 @@ function loop() {
         if (noteName !== lastNote || sampler !== lastSampler) {
             if (lastSampler && lastNote){
                 releaseNote(lastSampler, lastNote);
-        }
+                if (recorderEngine.isArmed(tracks[currentFingers])) {
+                    recorderEngine.noteOff(lastNote);
+                }
+            }
             sampler.triggerAttack(noteName);
             lastNote = noteName;
             lastSampler = sampler;
+            if (recorderEngine.isArmed(tracks[fingers])) {
+                recorderEngine.noteOn(noteName, {
+                    velocity: vol,
+                    instrument: tracks[fingers].instrument
+                });
+            }
         }
         
         } else {
@@ -229,6 +262,9 @@ function loop() {
         } else {
             if (lastSampler && lastNote) {
                 releaseNote(lastSampler, lastNote);
+                if (recorderEngine.isArmed(tracks[currentFingers])) {
+                    recorderEngine.noteOff(lastNote);
+                }
                 lastNote = null;
                 lastSampler = null;
             }

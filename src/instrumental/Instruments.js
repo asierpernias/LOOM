@@ -27,3 +27,4 @@ export function releaseNote(sampler, note) {
 
 
 export function freqToNote(freq) { return Tone.Frequency(freq).toNote();}
+

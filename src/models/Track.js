@@ -11,9 +11,9 @@ export class Track {
         this.solo = false;
     }
 
-    addClip(clicOptions) {
-        const clip = clipOptions instanceof Clip ? clicOptions: new Clip(clicOptions);
-        this.clip.push(clip);
+    addClip(clipOptions) {
+        const clip = clipOptions instanceof Clip ? clipOptions: new Clip(clipOptions);
+        this.clips.push(clip);
         return clip;
     }
 
@@ -22,23 +22,23 @@ export class Track {
     }
 
     getClip(clipId) {
-        return this.clip.find(c => c.id === clipId) ?? null;
+        return this.clips.find(c => c.id === clipId) ?? null;
     }
 
     setVolume(value) {
-        this.volume = Math.max(0,0, Math.min(1, value));
+        this.volume = Math.max(0, Math.min(1, value));
     }
 
-    toogleMute() {
+    toggleMute() {
         this.muted = !this.muted;
     }
 
-    toogleSolo() {
+    toggleSolo() {
         this.solo = !this.solo;
     }
 
     getClipsSorted() {
-        return [...this.clips].sort((a, b) => a.starTime - b.starTime);
+        return [...this.clips].sort((a, b) => a.startTime - b.startTime);
     }
 
     getDuration() {
