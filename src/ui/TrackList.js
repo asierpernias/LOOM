@@ -13,7 +13,7 @@ export class TrackList {
 
         const title = document.createElement("h2");
         title.textContent = "TRACKS";
-        title.style.cssText = "margin: 0; font-size:1rem; letter-spacing:2px; color:white;";
+        title.style.cssText = "width: 100%; box-sizing: border-box; margin: 0; font-size:1rem; letter-spacing:2px; color:white;";
         this.container.appendChild(title);
 
         for (const track of trackManager.getAllTracks()) {
@@ -47,6 +47,8 @@ export class TrackList {
         font-family: monospace;
         color: white;
         font-size: 0.85rem;
+        width: 100%;
+        box-sizing: border-box;
         `;
 
         const name = document.createElement("span");

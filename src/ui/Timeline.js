@@ -1,4 +1,4 @@
-import { trackManager } from "../core/TrackManager";
+import { trackManager } from "../core/TrackManager.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -11,12 +11,16 @@ export class Timeline {
     render() {
         this.container.innerHTML = "";
         this.container.style.cssText = `
-        display:flex;
+        display:none;
         flex-direction: column;
         gap: 4px;
         padding: 8px;
         overflow-x: auto;
         background: #0a0a0a;
+        max-height: 100%;
+        min-height: 200px;
+        overflow-y: auto;
+        box-sizing: border-box;
         `;
 
         for (const track of trackManager.getAllTracks()) {
@@ -31,6 +35,7 @@ export class Timeline {
         align-items: center;
         height: 60px;
         border-bottom: 1px solid #333;
+        min-height: 65px;
         `;
 
         const label = document.createElement("div");
@@ -40,7 +45,6 @@ export class Timeline {
         flex-shrink: 0;
         color: white;
         font-family: monospace;
-        font-size: 0.8rem
         font-size: 0.8rem;
         padding: 0 8px;
         `;
@@ -48,7 +52,7 @@ export class Timeline {
 
         const clipsArea = document.createElement("div");
         clipsArea.style.cssText = `
-        poition: relative;
+        position: relative;
         flex: 1;
         height: 100%;
         `;
@@ -62,8 +66,8 @@ export class Timeline {
     }
 
     _renderClipBlock(clip) {
-        const width = Math.maz(20, clip.duration * this.pixelsPerSecond);
-        const left = clips.startTime * this.pixelsPerSecond;
+        const width = Math.max(20, clip.duration * this.pixelsPerSecond);
+        const left = clip.startTime * this.pixelsPerSecond;
 
         const block = document.createElement("div");
         block.style.cssText = `
@@ -91,10 +95,10 @@ export class Timeline {
 
     _drawWaveform(canvas, audioBuffer) {
         const ctx = canvas.getContext("2d");
-        const data = AudioBuffer.getChannelData(0);
+        const data = audioBuffer.getChannelData(0);
         const width = canvas.width;
         const height = canvas.height;
-        const step = Math.ceil(data.lenght / width);
+        const step = Math.ceil(data.length / width);
         const amp = height / 2;
 
         ctx.fillStyle = "#222";
@@ -104,12 +108,12 @@ export class Timeline {
         ctx.lineWidth = 1;
         ctx.beginPath();
 
-        for (let i = 0 < width; i++;) {
+        for (let i = 0; i < width; i++) {
             let min = 1.0;
             let max = -1.0;
-            for (let j = 0 < step; j++;)  {
+            for (let j = 0; j < step; j++)  {
                 const idx = i * step + j;
-                if (idx >= data.lenght) break;
+                if (idx >= data.length) break;
                 const value = data [idx];
                 if (value < min) min = value;
                 if (value > max) max = value;

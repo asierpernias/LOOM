@@ -8,18 +8,25 @@ import {recorderEngine} from "./core/RecorderEngine.js";
 import * as Tone from "tone";
 import { InstrumentFactory } from "./instrumental/Instruments.js";
 import { TrackList } from "./ui/TrackList.js";
+import { Timeline } from "./ui/Timeline.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
 const gestureManager = new GestureManager();
 const handRenderer = new HandRenderer(canvas);
 
-const tracks = {
-    1: trackManager.createTrack({name: "Piano", instrument: "piano"}),
-    2: trackManager.createTrack({name: "Synth",  instrument: "synth"}),
-    3: trackManager.createTrack({name: "Bass", instrument: "bass"})
-};
-recorderEngine.arm(tracks[1]);
+const mainRow = document.createElement("div");
+mainRow.style.cssText = "display: flex; flex-shrink: 0; height: 520px;";
+app.appendChild(mainRow);
+
+const timelineContainer = document.createElement("div");
+timelineContainer.style.cssText = "display: none; flex: 1; min-height: 0; overflow-y: auto;";
+app.appendChild(timelineContainer);
+
+const timeline = new Timeline(timelineContainer);
+
+const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
+recorderEngine.arm(defaultTrack);
 
 let fadeCounter = 0;
 
@@ -79,11 +86,12 @@ app.appendChild(welcome)
 app.style.cssText = `
     display: flex;
     height: 100vh;
+    flex-direction: column;
 `;
 
 canvas.style.cssText = `
     display:block;
-    flex: 1;
+    flex-shrink: 0;
     border: none;
 `;
 
@@ -97,6 +105,7 @@ sidebar.style.cssText = `
     display:flex;
     flex-direction: column;
     gap:24px;
+    overflow-y: auto;
 `;
 sidebar.innerHTML = `
     <h2 style="margin:0; font-size:1rem; letter-spacing:2px;">OPTIONS</h2>
@@ -113,7 +122,7 @@ sidebar.innerHTML = `
     <label style="color:white; display:flex; flex-direction:column; gap:8px;"> OCTAVE
         <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
     </label>
-   <div id="trackListContainer" style="display:flex; flex-direction=column; gap: 8px"></div>
+   <div id="trackListContainer" style="display:flex; flex-direction: column; gap: 8px;"></div>
    <button id="recButton" style="
     background: #ff4444;
     color:white;
@@ -123,7 +132,7 @@ sidebar.innerHTML = `
     padding: 10px;
     "> REC</button>
 `;
-app.appendChild(sidebar);
+mainRow.appendChild(sidebar);
 sidebar.style.display = "none"
 
 const tracklist = new TrackList(document.getElementById("trackListContainer"));
@@ -132,6 +141,7 @@ const tracklist = new TrackList(document.getElementById("trackListContainer"));
 welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
     sidebar.style.display = "flex"
+    timelineContainer.style.display = "block";
     welcome.remove();
     startApp();
 });
@@ -152,7 +162,6 @@ document.getElementById("octaveSlider").addEventListener("input", e => {
 
 let isRecording = false;
 
-
 document.getElementById("recButton").addEventListener("click", async e =>{
     const btn = document.getElementById("recButton");
     if (!isRecording) {
@@ -165,25 +174,33 @@ document.getElementById("recButton").addEventListener("click", async e =>{
         isRecording = false;
         btn.textContent = "REC";
         btn.style.background = "#ff4444";
-        console.log("Clip grabado:", clip);
-
-        await recorderEngine.renderClip(clip, InstrumentFactory);
-        console.log("Clip renderizado:", clip.audioData);
         
-        const player = new Tone.Player().connect(audioEngine.playbackChannel);
-        player.buffer = clip.audioData;
-        audioEngine.setPlaybackVolume(1);
-        player.start();
+        await recorderEngine.renderClip(clip, InstrumentFactory);
+       
+        timeline.render();
     }
 });
 
-
-app.appendChild(canvas);
+mainRow.appendChild(canvas);
 
 gestureManager.mount(app);
 
 async function startApp() {
     const {width, height} = await gestureManager.start();
+
+    const availableWidth = mainRow.clientWidth - sidebar.offsetWidth;
+    const availableHeight = mainRow.clientHeight;
+    const aspectRatio = width / height;
+
+    let displayWidth = availableWidth
+    let displayHeight = displayWidth / aspectRatio
+    if ( displayHeight > availableHeight) {
+        displayHeight = availableHeight;
+        displayWidth = displayHeight * aspectRatio;
+    }
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+
     handRenderer.resize(width, height);
     loop();
 }
@@ -200,7 +217,8 @@ function loop() {
         const color = ["#00ff88", "#ff6600", "#ff00ff"][currentFingers - 1] ?? "white";
         
         const fingers = GestureManager.countFingers(landmarks);
-        
+        const instrumentName = ["piano", "synth", "bass"][fingers - 1] ?? "piano";
+
         if (fingers !== currentFingers) {
             if (fingers === pendingFingers) {
                 instrumentCounter++;
@@ -244,19 +262,15 @@ function loop() {
         if (noteName !== lastNote || sampler !== lastSampler) {
             if (lastSampler && lastNote){
                 releaseNote(lastSampler, lastNote);
-                if (recorderEngine.isArmed(tracks[currentFingers])) {
-                    recorderEngine.noteOff(lastNote);
-                }
+               recorderEngine.noteOff(lastNote);
             }
             sampler.triggerAttack(noteName);
             lastNote = noteName;
             lastSampler = sampler;
-            if (recorderEngine.isArmed(tracks[fingers])) {
-                recorderEngine.noteOn(noteName, {
-                    velocity: vol,
-                    instrument: tracks[fingers].instrument
-                });
-            }
+            recorderEngine.noteOn(noteName, {
+                velocity: vol,
+                instrument: instrumentName
+            });
         }
         
         } else {
@@ -265,9 +279,7 @@ function loop() {
         } else {
             if (lastSampler && lastNote) {
                 releaseNote(lastSampler, lastNote);
-                if (recorderEngine.isArmed(tracks[currentFingers])) {
-                    recorderEngine.noteOff(lastNote);
-                }
+                recorderEngine.noteOff(lastNote);
                 lastNote = null;
                 lastSampler = null;
             }
