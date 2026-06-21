@@ -16,6 +16,7 @@ export class Timeline {
         max-height: 100%;
         box-sizing: border-box;
         position:relative;
+        display: none;
         `;
 
         trackManager.onChange(() => this.render());
@@ -56,7 +57,7 @@ export class Timeline {
         bottom: 0;
         width: 2px;
         background: #C97A4A;
-        display:none;
+        display: none;
         pointer-events: none;
         `;
         this.container.appendChild(this._cursorEl);
