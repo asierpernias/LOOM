@@ -7,6 +7,7 @@ import {trackManager} from "./core/TrackManager.js";
 import {recorderEngine} from "./core/RecorderEngine.js";
 import * as Tone from "tone";
 import { InstrumentFactory } from "./instrumental/Instruments.js";
+import { TrackList } from "./ui/TrackList.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
@@ -14,9 +15,9 @@ const gestureManager = new GestureManager();
 const handRenderer = new HandRenderer(canvas);
 
 const tracks = {
-    1: new trackManager.createTrack({name: "Piano", instrument: "piano"}),
-    2: new trackManager.createTrack({name: "Synth",  instrument: "synth"}),
-    3: new trackManager.createTrack({name: "Bass", instrument: "bass"})
+    1: trackManager.createTrack({name: "Piano", instrument: "piano"}),
+    2: trackManager.createTrack({name: "Synth",  instrument: "synth"}),
+    3: trackManager.createTrack({name: "Bass", instrument: "bass"})
 };
 recorderEngine.arm(tracks[1]);
 
@@ -112,25 +113,21 @@ sidebar.innerHTML = `
     <label style="color:white; display:flex; flex-direction:column; gap:8px;"> OCTAVE
         <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
     </label>
-    <div style="display:flex, flex-direction:column, gap:8px;">
-        <label style="color: white;">ARMAR PISTA</label>
-        <select id="armSelect">
-            <option value="1">Piano</option>
-            <option value="2">Synth</option>
-            <option value="3">Bass</option>
-        </select>
-        <button id="recButton" style="
-        background: #ff4444;
-        color:white;
-        border: none;
-        padding: 10px;
-        font-family: monospace;
-        cursor: pointer;
-        "> REC </button>
-    </div>
+   <div id="trackListContainer" style="display:flex; flex-direction=column; gap: 8px"></div>
+   <button id="recButton" style="
+    background: #ff4444;
+    color:white;
+    border: none;
+    font-family: monospace;
+    cursor: pointer;
+    padding: 10px;
+    "> REC</button>
 `;
 app.appendChild(sidebar);
 sidebar.style.display = "none"
+
+const tracklist = new TrackList(document.getElementById("trackListContainer"));
+
 
 welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
@@ -155,10 +152,6 @@ document.getElementById("octaveSlider").addEventListener("input", e => {
 
 let isRecording = false;
 
-document.getElementById("armSelect").addEventListener("change", e => {
-    const fingerCount = parseInt(e.target.value);
-    recorderEngine.arm(tracks[fingerCount]);
-});
 
 document.getElementById("recButton").addEventListener("click", async e =>{
     const btn = document.getElementById("recButton");
