@@ -1,4 +1,4 @@
-import {TrackManager, trackManager} from "../core/TrackManager.js";
+import { trackManager} from "../core/TrackManager.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
 
 export class TrackList {
@@ -13,17 +13,17 @@ export class TrackList {
 
         const title = document.createElement("h2");
         title.textContent = "TRACKS";
-        title.style.cssText = "margin: 0; font-size:1rem; letter-spacinf:2px; color:white;";
+        title.style.cssText = "margin: 0; font-size:1rem; letter-spacing:2px; color:white;";
         this.container.appendChild(title);
 
-        for (const track of TrackManager.getAllTracks()) {
+        for (const track of trackManager.getAllTracks()) {
             this.container.appendChild(this._renderTrackRow(track));
         }
 
         const addButton = document.createElement("button");
         addButton.textContent = "+ Nueva pista";
         addButton.style.cssText = `
-        backgroundg: #333;
+        background: #333;
         color: white;
         border: none;
         padding: 8px;
@@ -61,37 +61,37 @@ export class TrackList {
         background: ${isArmed ? "#ff4444" : "#333"};
         color: white;
         border: none;
-        padding: none;
+        padding: 4px 8px;
         cursor: pointer;
         font-family: monospace;
         `;
         armBtn.addEventListener("click", () => {
-            recorderEngine.arm(track),
+            recorderEngine.arm(track);
             this.render();
         });
-        row.appendChild(armBtm);
+        row.appendChild(armBtn);
 
         const muteBtn = document.createElement("button");
         muteBtn.textContent = "M";
         muteBtn.style.cssText = `
-        background: ${isArmed ? "#ff4444" : "#333"};
+        background: ${track.muted ? "#ff4444" : "#333"};
         color: white;
         border: none;
-        padding: 4px, 8px;
+        padding: 4px 8px;
         cursor: pointer;
         `;
         muteBtn.addEventListener("click", () => {
             trackManager.toggleMute(track.id);
         });
-        row.appendChild(mteBtn);
+        row.appendChild(muteBtn);
 
         const soloBtn = document.createElement("button");
         soloBtn.textContent = "S";
         soloBtn.style.cssText = `
-        background: ${isArmed ? "#ff4444" : "#333"};
+        background: ${track.solo ? "#ff4444" : "#333"};
         color: white;
         border: none;
-        padding: 4px, 8px;
+        padding: 4px 8px;
         cursor: pointer;
         `;
         soloBtn.addEventListener("click", () => {
@@ -111,6 +111,6 @@ export class TrackList {
         });
         row.appendChild(volumeSlider);
 
-        return now;
+        return row;
     }
 }
