@@ -4,34 +4,69 @@ export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
         this.container = container;
         this.pixelsPerSecond = pixelsPerSecond;
+        this.transport = null;
+
+        this.container.style.cssText = `
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px;
+        overflow-y: auto;
+        overflow-x: auto;
+        background: #0a0a0a;
+        max-height: 100%;
+        box-sizing: border-box;
+        position:relative;
+        `;
+
         trackManager.onChange(() => this.render());
         this.render();
     }
 
+    setTransport(transport) {
+        this.transport = transport;
+        this._startCursorLoop();
+    }
+
+    _startCursorLoop() {
+        const update = () => {
+            this._updateCursor();
+            requestAnimationFrame(update);
+        };
+        update();
+    }
+
+    _updateCursor() {
+        if (!this.transport || !this._cursorEl) return;
+        const time = this.transport.getCurrentTime();
+        this._cursorEl.style.left = `${time * this.pixelsPerSecond + 80}px`;
+        this._cursorEl.style.display = this.transport.isPlaying ? "block" : "none";
+    }
+
     render() {
         this.container.innerHTML = "";
-        this.container.style.cssText = `
-        display:none;
-        flex-direction: column;
-        gap: 4px;
-        padding: 8px;
-        overflow-x: auto;
-        background: #0a0a0a;
-        max-height: 100%;
-        min-height: 200px;
-        overflow-y: auto;
-        box-sizing: border-box;
-        `;
 
         for (const track of trackManager.getAllTracks()) {
             this.container.appendChild(this._renderTrackLane(track));
         }
+
+        this._cursorEl = document.createElement("div");
+        this._cursorEl.style.cssText = `
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #C97A4A;
+        display:none;
+        pointer-events: none;
+        `;
+        this.container.appendChild(this._cursorEl);
+
+
     }
 
     _renderTrackLane(track) {
         const lane = document.createElement("div");
         lane.style.cssText = `
-        display: flex;
         align-items: center;
         height: 60px;
         border-bottom: 1px solid #333;
@@ -86,7 +121,7 @@ export class Timeline {
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = 52;
-            canvas.style.cssText = "display: block; width: 100%; height: 100%;";
+            canvas.style.cssText = "none; width: 100%; height: 100%;";
             this._drawWaveform(canvas, clip.audioData);
             block.appendChild(canvas);
         }

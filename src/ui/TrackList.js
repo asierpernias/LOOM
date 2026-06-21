@@ -2,8 +2,9 @@ import { trackManager} from "../core/TrackManager.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
 
 export class TrackList {
-    constructor(container) {
+    constructor(container, transport) {
         this.container = container;
+        this.transport = transport;
         trackManager.onChange(() => this.render());
         this.render();
     }
@@ -39,7 +40,7 @@ export class TrackList {
     _renderTrackRow(track) {
         const row = document.createElement("div");
         row.style.cssText = `
-        display: flex;
+        ;
         align-items: center;
         gap: 6px;
         padding: 6px;
@@ -100,6 +101,20 @@ export class TrackList {
             trackManager.toggleSolo(track.id);
         });
         row.appendChild(soloBtn);
+
+        const playBtn = document.createElement("button");
+        playBtn.textContent = "▶";
+        playBtn.style.cssText = `
+        background: #333;
+        color: white; 
+        border: none;
+        padding: 4px 8px;
+        cursor: pointer;
+        `;
+        playBtn.addEventListener("click", () => {
+            this.transport.playTrack(track.id);
+        });
+        row.appendChild(playBtn);
 
         const volumeSlider = document.createElement("input");
         volumeSlider.type = "range";

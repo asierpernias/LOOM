@@ -9,6 +9,7 @@ import * as Tone from "tone";
 import { InstrumentFactory } from "./instrumental/Instruments.js";
 import { TrackList } from "./ui/TrackList.js";
 import { Timeline } from "./ui/Timeline.js";
+import { Transport } from "./ui/Transport.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
@@ -24,6 +25,13 @@ timelineContainer.style.cssText = "display: none; flex: 1; min-height: 0; overfl
 app.appendChild(timelineContainer);
 
 const timeline = new Timeline(timelineContainer);
+
+const transportContainer = document.createElement("div");
+transportContainer.style.cssText = "background: #111 ; display: none; align-items: center; gap: 8px;";
+app.appendChild(transportContainer);
+
+const transport = new Transport(transportContainer);
+timeline.setTransport(transport);
 
 const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
 recorderEngine.arm(defaultTrack);
@@ -102,7 +110,7 @@ sidebar.style.cssText = `
     color: white;
     font-family: monospace;
     padding: 20px;
-    display:flex;
+    display:none;
     flex-direction: column;
     gap:24px;
     overflow-y: auto;
@@ -135,13 +143,14 @@ sidebar.innerHTML = `
 mainRow.appendChild(sidebar);
 sidebar.style.display = "none"
 
-const tracklist = new TrackList(document.getElementById("trackListContainer"));
+const tracklist = new TrackList(document.getElementById("trackListContainer"), transport);
 
 
 welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
     sidebar.style.display = "flex"
     timelineContainer.style.display = "block";
+    transportContainer.style.display = "flex";
     welcome.remove();
     startApp();
 });
