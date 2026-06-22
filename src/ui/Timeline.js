@@ -41,7 +41,7 @@ export class Timeline {
     _updateCursor() {
         if (!this.transport || !this._cursorEl) return;
         const time = this.transport.getCurrentTime();
-        this._cursorEl.style.left = `${time * this.pixelsPerSecond}px`;
+        this._cursorEl.style.left = `${80 + time * this.pixelsPerSecond}px`;
         this._cursorEl.style.display = this.transport.isPlaying ? "block" : "none";
     }
 
@@ -51,7 +51,6 @@ export class Timeline {
         const lanesWrapper = document.createElement("div");
         lanesWrapper.style.cssText = `
         position: relative;
-        margin-left: 80px;
         `
 
         for (const track of trackManager.getAllTracks()) {
@@ -67,6 +66,7 @@ export class Timeline {
         background: #C97A4A;
         display: none;
         pointer-events: none;
+        left: 80px;
         `;
         lanesWrapper.appendChild(this._cursorEl);
         this.container.appendChild(lanesWrapper);
@@ -74,6 +74,14 @@ export class Timeline {
     }
 
     _renderTrackLane(track) {
+
+        const row = document.createElement("div");
+        row.style.cssText = `
+        display: flex;
+        height: 65px;
+        border-bottom: 1px solid #333;
+        `;
+
         const lane = document.createElement("div");
         lane.style.cssText = `
         align-items: center;
@@ -81,6 +89,20 @@ export class Timeline {
         border-bottom: 1px solid #333;
         min-height: 65px;
         `;
+
+        const label = document.createElement("div");
+        label.textContent = track.name;
+        label.style.cssText = `
+        width: 80px;
+        flex-shrink: 0;
+        color: white;
+        font-family: monospace;
+        font-size: 0.8rem;
+        padding: 0 8px;
+        display: flex;
+        align-items: center;
+        `;
+        row.appendChild(label)
 
         const clipsArea = document.createElement("div");
         clipsArea.style.cssText = `
@@ -93,8 +115,8 @@ export class Timeline {
             clipsArea.appendChild(this._renderClipBlock(clip, track));
         }
 
-        lane.appendChild(clipsArea);
-        return lane;
+        row.appendChild(clipsArea);
+        return row;
     }
 
     _renderClipBlock(clip, track) {
