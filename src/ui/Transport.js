@@ -10,12 +10,6 @@ export class Transport {
         this._scheduledPlayers = [];
         this._listeners = [];
 
-        Tone.Transport.on("stop", () => {
-            this.isPlaying = false;
-            this._cleanupPlayers();
-            this._notify();
-        });
-
         this.render();
     }
 
@@ -89,6 +83,7 @@ export class Transport {
                     .connect(audioEngine.playbackChannel);
                 player.sync().start(clip.startTime);
                 this._scheduledPlayers.push(player);
+                console.log("Player creado, buffer cargado:", player.loaded, "duración buffer:", player.buffer?.duration);
             }
         }
 

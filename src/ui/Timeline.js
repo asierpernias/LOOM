@@ -126,8 +126,94 @@ export class Timeline {
             this._drawWaveform(canvas, clip.audioData);
             block.appendChild(canvas);
         }
+
+        const leftHandle = document.createElement("div");
+        leftHandle.style.cssText = `
+        position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+        cursor: ew-resize; background: rgba(255,255,255,0.15);
+        `;
+        block.appendChild(leftHandle);
+
+        const rightHandle = document.createElement("div");
+        rightHandle.style.cssText = ` 
+        position: absolute; right: 0; top: 0; bottom: 0; width: 6px;
+        cursor: ew-resize; background: rgba(255,255,255,0.15);
+        `
+        block.appendChild(rightHandle);
+
+        this._attachDragMove(block, clip);
+        this._attachDragTrim(leftHandle, clip, "start");
+        this._attachDragTrim(rightHandle, clip, "end");
+
         return block;
     }
+
+    _attachDragMove(block, clip) {
+        let dragging = false;
+        let startMouseX = 0;
+        let startClipTime = 0;
+
+        block.addEventListener("mousedown", e => {
+            if (e.target !== block && e.target.tagName !== "CANVAS") return;
+            dragging = true;
+            startMouseX = e.clientX;
+            startClipTime = clip.startTime;
+            block.style.cursor = "grabbing";
+            e.stopPropagation();
+        });
+
+        window.addEventListener("mousemove", e => {
+            if (!dragging) return;
+            const deltaPx = e.clientX - startMouseX;
+            const deltaTime = deltaPx / this.pixelsPerSecond;
+            const newStart = Math.max(0, startClipTime + deltaTime);
+            clip.moveTo(newStart);
+            block.style.left = `${newStart * this.pixelsPerSecond}px`;
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (!dragging) return;
+            dragging = false;
+            block.style.cursor = "grab";
+            this.render();
+        });
+    }
+
+    _attachDragTrim(handle, clip, side) {
+        let dragging = false;
+        let startMouseX = 0;
+        let startDuration = 0;
+        let startTime = 0;
+
+        handle.addEventListener("mousedown", e => {
+            dragging = true;
+            startMouseX = e.clientX;
+            startDuration = clip.duration;
+            startTime = clip.startTime;
+            e.stopPropagation();
+        });
+
+        window.addEventListener("mousemove", e => {
+            if (!dragging) return;
+            const deltaPx = e.clientX - startMouseX;
+            const deltaTime = deltaPx / this.pixelsPerSecond;
+
+            if (side === "start") {
+                const trimStart = Math.max(-startTime, Math.min(startDuration - 0.05, deltaTime));
+                clip.startTime = startTime + trimStart;
+                clip.duration = startDuration - trimStart;
+            } else {
+                clip.duration = Math.max(0.05, startDuration + deltaTime);
+            }
+            this.render();
+        });
+
+        window.addEventListener("mouseup", () => {
+            dragging = false;
+        });
+    }
+
+    
 
     _drawWaveform(canvas, audioBuffer) {
         const ctx = canvas.getContext("2d");
