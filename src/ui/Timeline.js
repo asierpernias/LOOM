@@ -41,15 +41,21 @@ export class Timeline {
     _updateCursor() {
         if (!this.transport || !this._cursorEl) return;
         const time = this.transport.getCurrentTime();
-        this._cursorEl.style.left = `${time * this.pixelsPerSecond + 80}px`;
+        this._cursorEl.style.left = `${time * this.pixelsPerSecond}px`;
         this._cursorEl.style.display = this.transport.isPlaying ? "block" : "none";
     }
 
     render() {
         this.container.innerHTML = "";
 
+        const lanesWrapper = document.createElement("div");
+        lanesWrapper.style.cssText = `
+        position: relative;
+        margin-left: 80px;
+        `
+
         for (const track of trackManager.getAllTracks()) {
-            this.container.appendChild(this._renderTrackLane(track));
+            lanesWrapper.appendChild(this._renderTrackLane(track));
         }
 
         this._cursorEl = document.createElement("div");
@@ -62,8 +68,8 @@ export class Timeline {
         display: none;
         pointer-events: none;
         `;
-        this.container.appendChild(this._cursorEl);
-
+        lanesWrapper.appendChild(this._cursorEl);
+        this.container.appendChild(lanesWrapper);
 
     }
 
@@ -75,18 +81,6 @@ export class Timeline {
         border-bottom: 1px solid #333;
         min-height: 65px;
         `;
-
-        const label = document.createElement("div");
-        label.textContent = track.name;
-        label.style.cssText = `
-        width: 80px;
-        flex-shrink: 0;
-        color: white;
-        font-family: monospace;
-        font-size: 0.8rem;
-        padding: 0 8px;
-        `;
-        lane.appendChild(label);
 
         const clipsArea = document.createElement("div");
         clipsArea.style.cssText = `
