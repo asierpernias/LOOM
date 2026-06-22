@@ -40,6 +40,7 @@ export class Timeline {
 
     _updateCursor() {
         if (!this.transport || !this._cursorEl) return;
+        if (!this.transport.isPlaying) return;
         const time = this.transport.getCurrentTime();
         this._cursorEl.style.left = `${80 + time * this.pixelsPerSecond}px`;
         this._cursorEl.style.display = this.transport.isPlaying ? "block" : "none";

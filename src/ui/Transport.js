@@ -9,6 +9,7 @@ export class Transport {
         this.isLooping = false;
         this._scheduledPlayers = [];
         this._listeners = [];
+        this._pausePosition = 0;
 
         this.render();
     }
@@ -29,7 +30,7 @@ export class Transport {
         playBtn.textContent = "PLAY";
         playBtn.style.cssText = this._buttonStyle("#333");
         playBtn.addEventListener("click", () => {
-            this.isPlaying ? this.stop() : this.playAll();
+            this.isPlaying ? this.pause() : this.playAll();
         });
         this.container.appendChild(playBtn);
 
@@ -65,7 +66,9 @@ export class Transport {
     }
 
     playAll() {
-        this.stop();
+
+        if (this.isPlaying) return;
+        this._cleanupPlayers();
 
         const tracks = trackManager.getAllTracks();
         const totalDuration = Math.max(0.1, ...tracks.map(t => t.getDuration()), 0.1);
@@ -81,6 +84,7 @@ export class Transport {
 
                 const player = new Tone.Player(clip.audioData)
                     .connect(audioEngine.playbackChannel);
+                player.volume.value = Tone.gainToDb(track.volume); 
                 player.sync().start(clip.startTime);
                 this._scheduledPlayers.push(player);
                 console.log("Player creado, buffer cargado:", player.loaded, "duración buffer:", player.buffer?.duration);
@@ -89,6 +93,7 @@ export class Transport {
 
         audioEngine.setPlaybackVolume(1);
         Tone.Transport.start();
+        Tone.Transport.start("+0.1", this._pausePosition);
         this.isPlaying = true;
         this._playBtnRef.textContent = "PAUSE";
         this._notify();
@@ -97,9 +102,23 @@ export class Transport {
     stop() {
         Tone.Transport.stop();
         Tone.Transport.position = 0;
+        this._pausePosition = 0;
         this._cleanupPlayers();
         this.isPlaying = false;
         if (this._playBtnRef) this._playBtnRef.textContent = "PLAY";
+        this._notify();
+    }
+
+    pause() {
+        this._pausePosition = Tone.Transport.seconds;
+        Tone.Transport.pause();
+        this._cleanupPlayers();
+        this.isPlaying = false;
+
+        if (this._playBtnRef) {
+            this._playBtnRef.textContent = "PLAY";
+        }
+
         this._notify();
     }
 
