@@ -1,4 +1,6 @@
 import { trackManager } from "../core/TrackManager.js";
+import { InstrumentFactory } from "../instrumental/Instruments.js";
+import { recorderEngine } from "../core/RecorderEngine.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -271,18 +273,19 @@ export class Timeline {
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             `;
 
-            const splitOption = this._menuItem("Cortar", () => {
-                const blockRect = block.getBoundingClientRect();
-                const clickX = e.clientX - blockRect.left;
-                const clickTime = clickX / this.pixelsPerSecond;
-                const absoluteTime = clip.startTime + clickTime;
-
+            const splitOption = this._menuItem("Cortar", async () => {
+                const clipsArea = block.parentElement;
+                const areaRect = clipsArea.getBoundingClientRect();
+                const clickX = e.clientX - areaRect.left;
+                const absoluteTime = clickX / this.pixelsPerSecond;
+                
                 try {
                     const [left, right] = clip.split(absoluteTime);
                     track.removeClip(clip.id);
                     track.addClip(left);
                     track.addClip(right);
-                    trackManager._notify();
+                    await recorderEngine.renderClip(left, InstrumentFactory);
+                    await recorderEngine.renderClip(right, InstrumentFactory);
                 } catch (err) {
                     console.warn("Split:", err.message);
                 }

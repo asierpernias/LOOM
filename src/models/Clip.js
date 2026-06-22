@@ -19,7 +19,7 @@ export class Clip {
         return this.startTime + this.duration;
     }
 
-    addNote({none, start, duration, velocity, instrument}) {
+    addNote({note, start, duration, velocity, instrument}) {
         this.notes.push({note, start, duration, velocity, instrument});
     }       
 
@@ -27,22 +27,32 @@ export class Clip {
         if (time <= this.startTime || time >= this.endTime) {
             throw new Error("split: tiempo de corte")
         }
-        const relativeCut = time - time.startTime;
+        const relativeCut = time - this.startTime;
 
         const left = new Clip({
-            audiodata: this.audioData,
+            audioData: this.audioData,
             startTime: this.startTime,
             duration: relativeCut,
-            notes: this.notes.filter(n => n.start < relativeCut)
+            notes: this.notes
+                .filter(n => n.start < relativeCut)
+                .map(n => ({
+                    ...n, 
+                    duration: Math.min(n.duration, relativeCut - n.start)
+                }))
         });
-
         const right = new Clip({
             audioData: this.audioData,
             startTime: time,
             duration: this.duration - relativeCut,
             notes: this.notes
-                .filter(n => n.start >= relativeCut)
-                .map(n => ({...n, start: n.start -relativeCut}))
+                .filter(n => n.start + n.duration > relativeCut) // notas que llegan hasta después del corte
+                .map(n => ({
+                    ...n,
+                    duration: n.start >= relativeCut
+                        ? n.duration                             // empieza después: duración intacta
+                        : n.duration - (relativeCut - n.start), // cruza el corte: recortar el trozo izquierdo
+                    start: Math.max(0, n.start - relativeCut)
+                }))
         });
         return [left, right];
     }

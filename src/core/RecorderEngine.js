@@ -92,7 +92,8 @@ export class RecorderEngine {
     }
 
     async renderClip(clip, instrumentFactory) {
-        const buffer = await Tone.Offline(({transport}) => {
+        if (!clip.notes.length || clip.duration <= 0) return null;
+        const buffer = await Tone.Offline(async ({transport}) => {
             const synthCache = new Map();
 
             for (const event of clip.notes)  {
@@ -108,6 +109,8 @@ export class RecorderEngine {
                     event.velocity
                 );
             }
+
+            transport.start();
         }, clip.duration);
         clip.audioData = buffer.get();
         return clip.audioData;
