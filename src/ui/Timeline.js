@@ -94,14 +94,14 @@ export class Timeline {
         `;
 
         for (const clip of track.getClipsSorted()) {
-            clipsArea.appendChild(this._renderClipBlock(clip));
+            clipsArea.appendChild(this._renderClipBlock(clip, track));
         }
 
         lane.appendChild(clipsArea);
         return lane;
     }
 
-    _renderClipBlock(clip) {
+    _renderClipBlock(clip, track) {
         const width = Math.max(20, clip.duration * this.pixelsPerSecond);
         const left = clip.startTime * this.pixelsPerSecond;
 
@@ -145,6 +145,7 @@ export class Timeline {
         this._attachDragTrim(leftHandle, clip, "start");
         this._attachDragTrim(rightHandle, clip, "end");
 
+        this._attachContextMenu(block, clip, track);
         return block;
     }
 
@@ -244,5 +245,83 @@ export class Timeline {
             ctx.lineTo(i, amp + max * amp);
         }
         ctx.stroke();
+    }
+
+    _attachContextMenu(block, clip, track) {
+        block.addEventListener("contextmenu", e => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            document.querySelectorAll(".timeline-context-menu").forEach(m => m.remove());
+
+            const menu = document.createElement("div");
+            menu.className = "timeline-context-menu";
+            menu.style.cssText = `
+            position: fixed;
+            left: ${e.clientX}px;
+            top: ${e.clientY}px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: white;
+            z-index: 1000;
+            min-width: 160px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            `;
+
+            const splitOption = this._menuItem("Cortar", () => {
+                const blockRect = block.getBoundingClientRect();
+                const clickX = e.clientX - blockRect.left;
+                const clickTime = clickX / this.pixelsPerSecond;
+                const absoluteTime = clip.startTime + clickTime;
+
+                try {
+                    const [left, right] = clip.split(absoluteTime);
+                    track.removeClip(clip.id);
+                    track.addClip(left);
+                    track.addClip(right);
+                    trackManager._notify();
+                } catch (err) {
+                    console.warn("Split:", err.message);
+                }
+                menu.remove();
+            });
+            menu.append(splitOption);
+
+            const deleteOption = this._menuItem("Eliminar clip", () => {
+                track.removeClip(clip.id);
+                trackManager._notify();
+                menu.remove();
+            });
+            menu.appendChild(deleteOption);
+
+            document.body.appendChild(menu);
+
+            const close = (ev) => {
+                if (!menu.contains(ev.target)) {
+                    menu.remove();
+                    window.removeEventListener("mousedown", close);
+                }
+            };
+            window.addEventListener("mousedown", close);
+        });
+    }
+
+    _menuItem(label, onClick) {
+        const item = document.createElement("div");
+        item.textContent = label;
+        item.style.cssText = ` 
+        padding: 8px 14px;
+        cursor: pointer;
+        `;
+        item.addEventListener("mouseenter", () => item.style.background = "#333");
+        item.addEventListener("mouseleave", () => item.style.background = "transparent");
+        item.addEventListener("mousedown", e => {
+            e.stopPropagation();
+            onClick();
+        });
+
+        return item;
     }
 }
