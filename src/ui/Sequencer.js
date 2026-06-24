@@ -14,7 +14,7 @@ export class Sequencer {
     render() {
         this.container.innerHTML = "";
         this.container.style.cssText = `
-        display: flex;
+        display: none;
         flex-direction: column;
         gap: 12px;
         padding: 16px;

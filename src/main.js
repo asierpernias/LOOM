@@ -40,7 +40,7 @@ recorderEngine.arm(defaultTrack);
 let currentView = "main";
 
 const viewToggleBtn = document.createElement("button");
-viewToggleBtn.textContent = "SEQUENCER";
+viewToggleBtn.textContent = "TIMELINE/SEQUENCER";
 viewToggleBtn.style.cssText = `
     background: #333;
     color: white;
@@ -55,18 +55,18 @@ const sequencerContainer = document.createElement("div");
 sequencerContainer.style.cssText = "display: none; flex: 1; min-height: 0;";
 app.appendChild(sequencerContainer);
 
+sequencerContainer.style.display = "none";
+
 const sequencer = new Sequencer(sequencerContainer);
 
 viewToggleBtn.addEventListener("click", () => {
     if (currentView === "main") {
         timelineContainer.style.display = "none";
         sequencerContainer.style.display = "flex";
-        viewToggleBtn.textContent = "TIMELINE";
         currentView = "sequencer";
     } else {
         sequencerContainer.style.display = "none";
-        timelineContainer.style.display = "flex";
-        viewToggleBtn.TextContent = "TIMELINE";
+        timelineContainer.style.display = "block";
         currentView = "main";
     }
 });
@@ -186,6 +186,7 @@ welcome.querySelector("button").addEventListener("click", async () => {
     sidebar.style.display = "flex"
     timelineContainer.style.display = "block";
     transportContainer.style.display = "flex";
+    sequencerContainer.style.display = "flex";
     welcome.remove();
     startApp();
 });

@@ -70,6 +70,8 @@ export class Transport {
         if (this.isPlaying) return;
         this._cleanupPlayers();
 
+        Tone.Transport.lookahead = 0;
+
         const tracks = trackManager.getAllTracks();
         const totalDuration = Math.max(0.1, ...tracks.map(t => t.getDuration()), 0.1);
 
@@ -92,11 +94,16 @@ export class Transport {
         }
 
         audioEngine.setPlaybackVolume(1);
-        Tone.Transport.start();
-        Tone.Transport.start("+0.1", this._pausePosition);
+        Tone.Transport.start("+0.01", this._pausePosition);
         this.isPlaying = true;
         this._playBtnRef.textContent = "PAUSE";
         this._notify();
+
+        for (const track of tracks) {
+    for (const clip of track.getClipsSorted()) {
+        console.log("clip startTime:", clip.startTime, "duration:", clip.duration);
+    }
+}
     }
 
     stop() {
