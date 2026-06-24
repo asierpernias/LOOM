@@ -1,6 +1,7 @@
 import { Pattern } from "../models/Patterns.js";
 import { sequencerEngine } from "../core/SequencerEngine.js";
 import { trackManager } from "../core/TrackManager.js"; 
+import * as Tone from "tone";
 
 export class Sequencer {
     constructor(container) {
@@ -179,7 +180,7 @@ export class Sequencer {
             if (!file) return;
 
             const arrayBuffer = await file.arrayBuffer();
-            const audioBuffer = await new AudioContext().decodeAudioData(arrayBuffer);
+            const audioBuffer = await Tone.context.rawContext.decodeAudioData(arrayBuffer);
 
             this.pattern.addInstrument({
                 name: nameInput.value || file.name.replace(/\.[^.]+$/, ""),
