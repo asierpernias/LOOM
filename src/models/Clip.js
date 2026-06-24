@@ -29,35 +29,84 @@ export class Clip {
         }
         const relativeCut = time - this.startTime;
 
+        let leftAudio = null;
+        let rightAudio = null;
+
+        if (this.audioData) {
+            const sampleRate = this.audioData.sampleRate;
+            const cutFrame = Math.floor(relativeCut * sampleRate);
+            const totalFrames = this.audioData.length;
+            const channels = this.audioData.numberOfChannels;
+
+            leftAudio = new AudioBuffer({
+                numberOfChannels: channels,
+                length: Math.max(1, cutFrame),
+                sampleRate
+            });
+            rightAudio = new AudioBuffer({
+                numberOfChannels: channels,
+                length: Math.max(1, totalFrames - cutFrame),
+                sampleRate
+            });
+
+            for (let c = 0; c < channels; c++) {
+                const data = this.audioData.getChannelData(c);
+                leftAudio.copyToChannel(data.slice(0, cutFrame), c);
+                rightAudio.copyToChannel(data.slice(cutFrame), c);
+            }
+        }
+
         const left = new Clip({
-            audioData: null,
-            startTime: this.startTime,
+            audioData: leftAudio,
+            startTime: this.startTime, 
             duration: relativeCut,
             notes: this.notes
                 .filter(n => n.start < relativeCut)
                 .map(n => ({
-                    ...n, 
+                    ...n,
                     duration: Math.min(n.duration, relativeCut - n.start)
                 }))
         });
+
         const right = new Clip({
-            audioData: null,
-            startTime: time,
+            audioData: rightAudio,
+            startTime: time, 
             duration: this.duration - relativeCut,
             notes: this.notes
-                .filter(n => n.start + n.duration > relativeCut) // notas que llegan hasta después del corte
+                .filter(n => n.start + n.duration > relativeCut)
                 .map(n => ({
                     ...n,
                     duration: n.start >= relativeCut
-                        ? n.duration                             // empieza después: duración intacta
-                        : n.duration - (relativeCut - n.start), // cruza el corte: recortar el trozo izquierdo
+                        ? n.duration : n.duration - (relativeCut - n.start),
                     start: Math.max(0, n.start - relativeCut)
                 }))
         });
+
         return [left, right];
     }
 
     trim({trimStart = 0, trimEnd = 0} = {}) {
+       if (this.audioData) {
+        const sampleRate = this.audioData.sampleRate;
+        const channels = this.audioData.numberOfChannels;
+        const startFrame = Math.floor(trimStart * sampleRate);
+        const endFrame = this.audioData.length - Math.floor(trimEnd * sampleRate);
+        const newLength = Math.max(1, endFrame - startFrame);
+
+        const newBuffer = new AudioBuffer({
+            numberOfChannels: channels,
+            length: newLength,
+            sampleRate
+        });
+
+        for (let c = 0; c < channels; c++) {
+            const data = this.audioData.getChannelData(c);
+            newBuffer.copyToChannel(data.slice(startFrame, endFrame), c);
+        }
+
+        this.audioData = newBuffer;
+        }
+
         this.startTime += trimStart;
         this.duration -= (trimStart + trimEnd);
         this.notes = this.notes

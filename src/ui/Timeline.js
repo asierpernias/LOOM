@@ -230,7 +230,20 @@ export class Timeline {
         });
 
         window.addEventListener("mouseup", () => {
+            if (!dragging) return;
             dragging = false;
+
+            if (clip.audioData) {
+                const trimStart = clip.startTime - startTime;
+                const trimEnd = (startTime + startDuration) - (clip.startTime + clip.duration);
+                
+                clip.startTime = startTime;
+                clip.duration = startDuration;
+
+                clip.trim({ trimStart, trimEnd});
+            }
+            
+            this.render();
         });
     }
 
@@ -301,8 +314,8 @@ export class Timeline {
                     track.removeClip(clip.id);
                     track.addClip(left);
                     track.addClip(right);
-                    await recorderEngine.renderClip(left, InstrumentFactory);
-                    await recorderEngine.renderClip(right, InstrumentFactory);
+                    if (left.notes.length > 0) await recorderEngine.renderClip(left, InstrumentFactory);
+                    if (right.notes.length > 0) await recorderEngine.renderClip(right, InstrumentFactory);
                 } catch (err) {
                     console.warn("Split:", err.message);
                 }
