@@ -10,6 +10,7 @@ import { InstrumentFactory } from "./instrumental/Instruments.js";
 import { TrackList } from "./ui/TrackList.js";
 import { Timeline } from "./ui/Timeline.js";
 import { Transport } from "./ui/Transport.js";
+import { Sequencer } from "./ui/Sequencer.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
@@ -35,6 +36,40 @@ timeline.setTransport(transport);
 
 const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
 recorderEngine.arm(defaultTrack);
+
+let currentView = "main";
+
+const viewToggleBtn = document.createElement("button");
+viewToggleBtn.textContent = "SEQUENCER";
+viewToggleBtn.style.cssText = `
+    background: #333;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    font-family: monospace;
+    cursor: pointer;
+`;
+transportContainer.appendChild(viewToggleBtn);
+
+const sequencerContainer = document.createElement("div");
+sequencerContainer.style.cssText = "display: none; flex: 1; min-height: 0;";
+app.appendChild(sequencerContainer);
+
+const sequencer = new Sequencer(sequencerContainer);
+
+viewToggleBtn.addEventListener("click", () => {
+    if (currentView === "main") {
+        timelineContainer.style.display = "none";
+        sequencerContainer.style.display = "flex";
+        viewToggleBtn.textContent = "TIMELINE";
+        currentView = "sequencer";
+    } else {
+        sequencerContainer.style.display = "none";
+        timelineContainer.style.display = "flex";
+        viewToggleBtn.TextContent = "TIMELINE";
+        currentView = "main";
+    }
+});
 
 let fadeCounter = 0;
 

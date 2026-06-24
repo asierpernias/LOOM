@@ -7,6 +7,7 @@ export class TrackList {
         this.transport = transport;
         trackManager.onChange(() => this.render());
         this.render();
+        this._pausePosition = 0;
     }
 
     render() {

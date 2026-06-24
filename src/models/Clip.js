@@ -30,7 +30,7 @@ export class Clip {
         const relativeCut = time - this.startTime;
 
         const left = new Clip({
-            audioData: this.audioData,
+            audioData: null,
             startTime: this.startTime,
             duration: relativeCut,
             notes: this.notes
@@ -41,7 +41,7 @@ export class Clip {
                 }))
         });
         const right = new Clip({
-            audioData: this.audioData,
+            audioData: null,
             startTime: time,
             duration: this.duration - relativeCut,
             notes: this.notes
