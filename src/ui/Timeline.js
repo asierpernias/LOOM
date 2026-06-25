@@ -3,6 +3,7 @@ import { InstrumentFactory } from "../instrumental/Instruments.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
 import { exportClipsToMidi, exportAllTracksToMidi } from "../export/MidiExporter.js"
 import { WavExporter } from "../export/WavExporter.js";
+import { Mp3Exporter } from "../export/MP3Exporter.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -490,7 +491,10 @@ export class Timeline {
         });
         dropdown.appendChild(wavOption);
 
-        const mp3Option = this._menuItem("Exportar a MP3", () => {});
+        const mp3Option = this._menuItem("Exportar a MP3", async () => {
+            await Mp3Exporter.exportProjectToMp3();
+            dropdown.style.display = "none"
+        });
         dropdown.appendChild(mp3Option);
 
         const midiOption = this._menuItem("Exportar a MIDI", () => {

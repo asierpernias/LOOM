@@ -4,6 +4,11 @@ import  {trackManager} from "../core/TrackManager.js";
 export class WavExporter {
 
     static async exportProjectToWav() {
+        const buffer = await WavExporter.renderProjectBuffer();
+        return this._toWav(buffer);
+    }
+     
+    static async renderProjectBuffer(){
         const duration = this._getProjectDuration();
         const buffer = await Tone.Offline(async () => {
             const tracks = trackManager.getAllTracks();
@@ -18,7 +23,7 @@ export class WavExporter {
 
         }, duration);
 
-        return this._toWav(buffer.get());
+        return buffer.get();
     }
 
     static _renderClip(track, clip) {
