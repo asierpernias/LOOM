@@ -61,7 +61,7 @@ export class WavExporter {
         return track._synth;
     }
 
-    static volume(v) {
+    static _volume(v) {
         return 20 * Math.log10(Math.max(v, 0.0001));
     }
 

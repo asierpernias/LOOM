@@ -2,6 +2,7 @@ import { trackManager } from "../core/TrackManager.js";
 import { InstrumentFactory } from "../instrumental/Instruments.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
 import { exportClipsToMidi, exportAllTracksToMidi } from "../export/MidiExporter.js"
+import { WavExporter } from "../export/WavExporter.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -451,10 +452,11 @@ export class Timeline {
         display: flex;
         gap: 8px;
         padding: 4px 0 8px 0;
+        position: relative;
         `;
 
         const exportAllBtn = document.createElement("button");
-        exportAllBtn.textContent = "Exportar a MIDI";
+        exportAllBtn.textContent = "Exportar";
         exportAllBtn.style.cssText = `
         background: #111;
         color: white;
@@ -465,11 +467,67 @@ export class Timeline {
         font-size: 0.8rem;
         cursor: pointer;
         `;
-        exportAllBtn.addEventListener("click", () => {
-            exportAllTracksToMidi(trackManager.getAllTracks(), "proyecto.mid");
+
+        const dropdown = document.createElement("div");
+        dropdown.style.cssText = `
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 4px;
+        background: #1a1a1a;
+        border: 1px solid #444;
+        border-radius: 3px;
+        min-width: 160px;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        flex-direction: column;
+        `;
+
+        const wavOption = this._menuItem("Wxportar a WAV", async() => {
+            const blob = await WavExporter.exportProjectToWav();
+            this._downloadBlob(blob, "projecto.wav");
+            dropdown.style.display = "none";
         });
+        dropdown.appendChild(wavOption);
+
+        const mp3Option = this._menuItem("Exportar a MP3", () => {});
+        dropdown.appendChild(mp3Option);
+
+        const midiOption = this._menuItem("Exportar a MIDI", () => {
+            exportAllTracksToMidi(trackManager.getAllTracks(), "project.mid");
+            dropdown.style.display = "none";
+        });
+        dropdown.appendChild(midiOption);
+
+        exportAllBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            const isOpen = dropdown.style.display === "flex";
+            dropdown.style.display = isOpen ? "none" : "flex";    
+        });
+        
+        const closeOnOutsideClick = (e) => {
+            if (!bar.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
+        };
+
+        window.addEventListener("mousedown", closeOnOutsideClick);
+
         bar.appendChild(exportAllBtn);
+        bar.appendChild(dropdown);
         return bar;
+    }
+
+    _downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
     }
 
     _refreshSelectionStyles() {
