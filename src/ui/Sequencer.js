@@ -26,12 +26,12 @@ export class Sequencer {
         color: white
         `;
 
-        this.container.appendChild(this._renderToolbar());
+        this.container.appendChild(this._renderToolBar());
         this.container.appendChild(this._renderGrid());
         this.container.appendChild(this._renderAddInstrument());
     }
 
-    _renderToolbar() {
+    _renderToolBar() {
         const bar = document.createElement("div");
         bar.style.cssText = "display:flex; align-items:center; gap: 12px; flex-wrap wrap;";
 
