@@ -7,12 +7,14 @@ export class Clip {
      * @param {Array} opts.notes
      */
    
-    constructor({audioData = null, startTime = 0, duration = 0, notes = []} = {}) {
+    constructor({audioData = null, startTime = 0, duration = 0, notes = [], trimStart = 0, trimEnd = 0,} = {}) {
         this.id = crypto.randomUUID();
         this.audioData = audioData;
         this.startTime = startTime;
         this.duration = duration;
         this.notes = notes;
+        this.trimStart = trimStart;
+        this.trimEnd = trimEnd;
     }
 
     get endTime() {
@@ -86,27 +88,8 @@ export class Clip {
     }
 
     trim({trimStart = 0, trimEnd = 0} = {}) {
-       if (this.audioData) {
-        const sampleRate = this.audioData.sampleRate;
-        const channels = this.audioData.numberOfChannels;
-        const startFrame = Math.floor(trimStart * sampleRate);
-        const endFrame = this.audioData.length - Math.floor(trimEnd * sampleRate);
-        const newLength = Math.max(1, endFrame - startFrame);
-
-        const newBuffer = new AudioBuffer({
-            numberOfChannels: channels,
-            length: newLength,
-            sampleRate
-        });
-
-        for (let c = 0; c < channels; c++) {
-            const data = this.audioData.getChannelData(c);
-            newBuffer.copyToChannel(data.slice(startFrame, endFrame), c);
-        }
-
-        this.audioData = newBuffer;
-        }
-
+        this.trimStart = (this.trimStart ?? 0) + trimStart;
+        this.trimEnd = (this.trimEnd ?? 0) + trimEnd;
         this.startTime += trimStart;
         this.duration -= (trimStart + trimEnd);
         this.notes = this.notes

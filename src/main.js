@@ -11,6 +11,8 @@ import { TrackList } from "./ui/TrackList.js";
 import { Timeline } from "./ui/Timeline.js";
 import { Transport } from "./ui/Transport.js";
 import { Sequencer } from "./ui/Sequencer.js";
+import { SequencerEngine } from "./core/SequencerEngine.js";
+import { sequencerEngine } from "./core/SequencerEngine.js";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
@@ -65,6 +67,7 @@ viewToggleBtn.addEventListener("click", () => {
         sequencerContainer.style.display = "flex";
         currentView = "sequencer";
     } else {
+        sequencerEngine.stop();
         sequencerContainer.style.display = "none";
         timelineContainer.style.display = "block";
         currentView = "main";

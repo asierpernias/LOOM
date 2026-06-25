@@ -1,5 +1,5 @@
 import * as Tone from "tone";
-import { Clip } from "../models/Clip";
+import { Clip } from "../models/Clip.js";
 
 
 export class SequencerEngine {
@@ -8,6 +8,11 @@ export class SequencerEngine {
         this._sequence = null;
         this._currentStep = 0;
         this._listeners = [];
+        this._stopListeners = [];
+    }
+
+    onStop(callback) {
+        this._stopListeners.push(callback);
     }
 
     onChange(callback) {
@@ -37,9 +42,9 @@ export class SequencerEngine {
             for (const instrument of this._pattern.instruments) {
                 if (!instrument.steps[step] || !instrument.buffer) continue;
 
-                const source = Tone.context.createBufferSource();
+                const source = Tone.context.rawContext.createBufferSource();
                 source.buffer = instrument.buffer;
-                source.connect(Tone.context.destination);
+                source.connect(Tone.context.rawContext.destination);
                 source.start(time);
             }
         }, [...Array(this._pattern.steps).keys()], "16n");
@@ -57,6 +62,7 @@ export class SequencerEngine {
 
         this._currentStep = 0;
         this._notify();
+        for (const cb of this._stopListeners) cb();
     }
 
     async renderToClip() {

@@ -87,7 +87,8 @@ export class Transport {
                 const player = new Tone.Player(clip.audioData)
                     .connect(audioEngine.playbackChannel);
                 player.volume.value = Tone.gainToDb(track.volume); 
-                player.sync().start(clip.startTime);
+                player.sync().start(clip.startTime, clip.trimStart ?? 0);
+                player.offset = clip.trimStart ?? 0;
                 this._scheduledPlayers.push(player);
                 console.log("Player creado, buffer cargado:", player.loaded, "duración buffer:", player.buffer?.duration);
             }
@@ -98,12 +99,6 @@ export class Transport {
         this.isPlaying = true;
         this._playBtnRef.textContent = "PAUSE";
         this._notify();
-
-        for (const track of tracks) {
-    for (const clip of track.getClipsSorted()) {
-        console.log("clip startTime:", clip.startTime, "duration:", clip.duration);
-    }
-}
     }
 
     stop() {

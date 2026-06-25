@@ -79,6 +79,11 @@ export class Sequencer {
                 playing = false;
             }
         });
+        sequencerEngine.onStop(() => {
+            playing = false;
+            playBtn.textContent = "PLAY";
+            playBtn.style.background = "#333";
+        })
         bar.appendChild(playBtn);
         
         const exportBtn = document.createElement("button");

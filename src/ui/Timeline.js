@@ -205,17 +205,25 @@ export class Timeline {
         let startMouseX = 0;
         let startDuration = 0;
         let startTime = 0;
+        let originalTrimStart = 0;
+        let originalTrimEnd = 0;
+        let block = null;
 
         handle.addEventListener("mousedown", e => {
+            block = handle.parentElement;
+            console.log("mosuedown startdura", clip.duration);
             dragging = true;
             startMouseX = e.clientX;
             startDuration = clip.duration;
             startTime = clip.startTime;
+            originalTrimStart = clip.trimStart ?? 0;
+            originalTrimEnd = clip.trimEnd ?? 0;
             e.stopPropagation();
         });
 
         window.addEventListener("mousemove", e => {
             if (!dragging) return;
+            console.log("mousemove dragging:", dragging, "side:", side, "deltaTime", (e.clientX - startMouseX) / this.pixelsPerSecond);
             const deltaPx = e.clientX - startMouseX;
             const deltaTime = deltaPx / this.pixelsPerSecond;
 
@@ -226,23 +234,32 @@ export class Timeline {
             } else {
                 clip.duration = Math.max(0.05, startDuration + deltaTime);
             }
-            this.render();
+            
+            if (block) {
+                block.style.left = `${clip.startTime * this.pixelsPerSecond}px`;
+                block.style.width = `${Math.max(20, clip.duration * this.pixelsPerSecond)}px`;
+            }
+            
         });
 
         window.addEventListener("mouseup", () => {
             if (!dragging) return;
             dragging = false;
+            const trimEndDelta = Math.max(0, (startTime + startDuration) - (clip.startTime + clip.duration));
+            const trimStartDelta = Math.max(0, clip.startTime - startTime);
+            console.log("antes reset:", { clipStart: clip.startTime, clipDuration: clip.duration });
+            clip.startTime = startTime;
+            clip.duration = startDuration;
+            clip.trimStart = originalTrimStart;
+            clip.trimEnd = originalTrimEnd;
+            console.log("trimStartDelta:", trimStartDelta, "trimEndDelta:", trimEndDelta, "startDuration:", startDuration, "clipDuration:", clip.duration);
+            console.log("trim:", { trimStartDelta, trimEndDelta, clipTrimStart: clip.trimStart, clipTrimEnd: clip.trimEnd });
+            clip.trim({ 
+                trimStart: trimStartDelta,
+                trimEnd: trimEndDelta,
+            });
+            console.log("post trim:", { trimStart: clip.trimStart, trimEnd: clip.trimEnd });
 
-            if (clip.audioData) {
-                const trimStart = clip.startTime - startTime;
-                const trimEnd = (startTime + startDuration) - (clip.startTime + clip.duration);
-                
-                clip.startTime = startTime;
-                clip.duration = startDuration;
-
-                clip.trim({ trimStart, trimEnd});
-            }
-            
             this.render();
         });
     }
