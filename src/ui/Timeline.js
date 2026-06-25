@@ -1,12 +1,14 @@
 import { trackManager } from "../core/TrackManager.js";
 import { InstrumentFactory } from "../instrumental/Instruments.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
+import { exportClipsToMidi, exportAllTracksToMidi } from "../export/MidiExporter.js"
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
         this.container = container;
         this.pixelsPerSecond = pixelsPerSecond;
         this.transport = null;
+        this.selectedClips = new Set();
 
         this.container.style.cssText = `
         flex-direction: column;
@@ -49,10 +51,20 @@ export class Timeline {
     render() {
         this.container.innerHTML = "";
 
+        const toolbar = this.renderToolbar();
+        this.container.appendChild(toolbar);
+
         const lanesWrapper = document.createElement("div");
         lanesWrapper.style.cssText = `
         position: relative;
         `
+
+        lanesWrapper.addEventListener("mousedown", e => {
+            if (e.target === lanesWrapper) {
+                this.selectedClips.clear();
+                this.render();
+            }
+        });
 
         for (const track of trackManager.getAllTracks()) {
             lanesWrapper.appendChild(this._renderTrackLane(track));
@@ -125,6 +137,7 @@ export class Timeline {
         const left = clip.startTime * this.pixelsPerSecond;
 
         const block = document.createElement("div");
+        block.dataset.clipId = clip.id;
         block.style.cssText = `
         position: absolute;
         top: 4px;
@@ -132,7 +145,7 @@ export class Timeline {
         width: ${width}px;
         height: 52px;
         background: #222;
-        border: 1px solid #555;
+        border: 1px solid ${this.selectedClips.has(clip.id) ? "#C97A4A" : "#555"};
         border-radius: 3px;
         overflow: hidden;
         `;
@@ -175,6 +188,16 @@ export class Timeline {
 
         block.addEventListener("mousedown", e => {
             if (e.target !== block && e.target.tagName !== "CANVAS") return;
+            
+            if (e.shiftKey) {
+                if (this.selectedClips.has(clip.id)) {
+                    this.selectedClips.delete(clip.id);
+                } else {
+                    this.selectedClips.add(clip.id);
+                }
+                this._refreshSelectionStyles();
+            }
+            
             dragging = true;
             startMouseX = e.clientX;
             startClipTime = clip.startTime;
@@ -349,6 +372,25 @@ export class Timeline {
 
             document.body.appendChild(menu);
 
+            const isMultiSelected = this.selectedClips.has(clip.id) && this.selectedClips > 1;
+
+            if (isMultiSelected) {
+                const exportSelectOption = this._menuItem("Exportar seleccion de clips", () => {
+                    const clips = trackManager.getAllTracks()
+                        .flatMap(t => t.getClipsSorted())
+                        .filter(c => this.selectedClips.has(c.id));
+                    exportClipsToMidi(clips, "selecion.mid");
+                    menu.remove();
+                });
+                menu.appendChild(exportSelectOption);
+            } else {
+                const exportClipOption = this._menuItem("Exportar clip a MIDI", () => {
+                    exportClipsToMidi([clip], `${track.name ?? "clip"}.mid`);
+                    menu.remove();
+                });
+                menu.appendChild(exportClipOption);
+            }
+
             const close = (ev) => {
                 if (!menu.contains(ev.target)) {
                     menu.remove();
@@ -401,5 +443,41 @@ export class Timeline {
             return this._resolveCollision(track, clip, start);
         }
         return start;
+    }
+
+    renderToolbar() {
+        const bar = document.createElement("div");
+        bar.style.cssText = `
+        display: flex;
+        gap: 8px;
+        padding: 4px 0 8px 0;
+        `;
+
+        const exportAllBtn = document.createElement("button");
+        exportAllBtn.textContent = "Exportar a MIDI";
+        exportAllBtn.style.cssText = `
+        background: #111;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 3px;
+        padding: 4px 10px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        cursor: pointer;
+        `;
+        exportAllBtn.addEventListener("click", () => {
+            exportAllTracksToMidi(trackManager.getAllTracks(), "proyecto.mid");
+        });
+        bar.appendChild(exportAllBtn);
+        return bar;
+    }
+
+    _refreshSelectionStyles() {
+        const lanesWrapper = this.container.querySelector("div");
+        if (!lanesWrapper) return;
+        lanesWrapper.querySelectorAll("[data-clip-id]").forEach(el => {
+            const isSelected = this.selectedClips.has(el.dataset.clipId);
+            el.style.borderColor = isSelected ? "#C97A4A" : "#555";
+        });
     }
 }
