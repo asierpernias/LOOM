@@ -408,6 +408,7 @@ export class Timeline {
         item.style.cssText = ` 
         padding: 8px 14px;
         cursor: pointer;
+        color: white;
         `;
         item.addEventListener("mouseenter", () => item.style.background = "#333");
         item.addEventListener("mouseleave", () => item.style.background = "transparent");
@@ -471,10 +472,7 @@ export class Timeline {
         const dropdown = document.createElement("div");
         dropdown.style.cssText = `
         display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        margin-top: 4px;
+        position: fixed;
         background: #1a1a1a;
         border: 1px solid #444;
         border-radius: 3px;
@@ -483,8 +481,9 @@ export class Timeline {
         box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         flex-direction: column;
         `;
+        document.body.appendChild(dropdown);
 
-        const wavOption = this._menuItem("Wxportar a WAV", async() => {
+        const wavOption = this._menuItem("Exportar a WAV", async() => {
             const blob = await WavExporter.exportProjectToWav();
             this._downloadBlob(blob, "projecto.wav");
             dropdown.style.display = "none";

@@ -187,7 +187,6 @@ const tracklist = new TrackList(document.getElementById("trackListContainer"), t
 welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
     sidebar.style.display = "flex"
-    timelineContainer.style.display = "block";
     transportContainer.style.display = "flex";
     sequencerContainer.style.display = "flex";
     welcome.remove();
