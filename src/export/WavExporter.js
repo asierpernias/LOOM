@@ -26,15 +26,49 @@ export class WavExporter {
         return buffer.get();
     }
 
+    static async exportClipsToWav(clips, filenam = "seleccion.wav") {
+        const buffer = await this.renderClipsBuffer(clips);
+        const blob = this._toWav(buffer);
+        this._downloadBlob(blob, filename);
+    }
+
+    static async renderClipsBuffer(clips) {
+        const duration = this._getClipsDuration(clips);
+        const buffer = await Tone.Offline(async () => {
+            for (const clip of clips) {
+                this._renderClip(null, clip);
+            }
+        }, duration);
+    }
+
+    static _getClipsDuration() {
+        let max = 0;
+        for (const c of clips) {
+            max = Math.max(max, c.endTime);
+        }
+        return max;
+    }
+
+    static _downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const  a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
     static _renderClip(track, clip) {
         if (clip.audioData) {
             const player = new Tone.Player(clip.audioData).toDestination();
-            player.volume.value = this._volume(track.volume);
+            player.volume.value = track ? this._volume(track.volume) : 0;
             player.start(clip.startTime);
         }
 
         if (clip.notes && clip.notes.length) {
-            const synth = this._getSynth(track);
+            const synth = track ? this._getSynth(track) : this._getDefaultSynth();
 
             for (const n of clip.notes) {
                 synth.triggerAttackRelease(
@@ -122,5 +156,13 @@ export class WavExporter {
         }
 
         return new Blob([buffer], {type: "audio/wav"});
-    }    
+    }   
+    
+    static _defaultSynth = null;
+    static _getDefaultSynth() {
+        if (!this._defaultSynth) {
+            this._defaultSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+        }
+        return this._defaultSynth;
+    }
 }
