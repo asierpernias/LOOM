@@ -90,7 +90,7 @@ export function exportClipsToMidi(clips, filename = "export.mid", bpm = DEFAULT_
 
     const midiTrack = buildMidiTrackFromClips(clips, bpm);
     const writer = new MidiWriter.Writer([midiTrack]);
-    const blob = new ([writer.buildFile()], { type: "audio/midi"});
+    const blob = new Blob([writer.buildFile()], { type: "audio/midi"});
 
     downloadBlob(blob, filename);
 }

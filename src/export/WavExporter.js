@@ -26,7 +26,7 @@ export class WavExporter {
         return buffer.get();
     }
 
-    static async exportClipsToWav(clips, filenam = "seleccion.wav") {
+    static async exportClipsToWav(clips, filename = "seleccion.wav") {
         const buffer = await this.renderClipsBuffer(clips);
         const blob = this._toWav(buffer);
         this._downloadBlob(blob, filename);
@@ -39,9 +39,10 @@ export class WavExporter {
                 this._renderClip(null, clip);
             }
         }, duration);
+        return buffer.get();
     }
 
-    static _getClipsDuration() {
+    static _getClipsDuration(clips) {
         let max = 0;
         for (const c of clips) {
             max = Math.max(max, c.endTime);

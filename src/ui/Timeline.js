@@ -374,39 +374,32 @@ export class Timeline {
 
             document.body.appendChild(menu);
 
-            const isMultiSelected = this.selectedClips.has(clip.id) && this.selectedClips.size > 1;
-
-            if (isMultiSelected) {
-                const getSelectedClips = () => trackManager.getAllTracks()
+            const getSelectedClips = () => {
+                const fromSelection = trackManager.getAllTracks()
                     .flatMap(t => t.getClipsSorted())
                     .filter(c => this.selectedClips.has(c.id));
+                return fromSelection.length > 0 ? fromSelection : [clip];
+            }
+            
+            const exportSelectionWavOption = this._menuItem("Exportar seleccion a WAV", async () => {
+            await WavExporter.exportClipsToWav(getSelectedClips(), "seleccion.wav");
+            menu.remove();
+            });
+            menu.appendChild(exportSelectionWavOption);
 
-                
-                const exportSelectOption = this._menuItem("Exportar seleccion de clips", () => {
-                    exportClipsToMidi(getSelectedClips(), "selecion.mid");
-                    menu.remove();
-                });
-                menu.appendChild(exportSelectOption);
-
-                const exportSelectionWavOption = this._menuItem("Exportar seleccion a WAV", async () => {
-                    await WavExporter.exportClipsToWav(getSelectedClips(), "seleccion.wav");
-                    menu.remove();
-                });
-                menu.appendChild(exportSelectionWavOption);
-
-                const exportSelectionMp3Option = this._menuItem("Exportar seleccion a Mp3", async () => {
+            const exportSelectionMp3Option = this._menuItem("Exportar seleccion a Mp3", async () => {
                     await Mp3Exporter.exportClipsToMp3(getSelectedClips(), "seleccion.mp3");
                     menu.remove();
                 });
                 menu.appendChild(exportSelectionMp3Option);
                 
-            } else {
-                const exportClipOption = this._menuItem("Exportar clip a MIDI", () => {
-                    exportClipsToMidi([clip], `${track.name ?? "clip"}.mid`);
-                    menu.remove();
-                });
-                menu.appendChild(exportClipOption);
-            }
+            
+            const exportClipOption = this._menuItem("Exportar clip a MIDI", () => {
+                exportClipsToMidi([clip], `${track.name ?? "clip"}.mid`);
+                menu.remove();
+            });
+            menu.appendChild(exportClipOption);
+            
 
             const close = (ev) => {
                 if (!menu.contains(ev.target)) {

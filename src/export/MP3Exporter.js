@@ -8,6 +8,12 @@ export class Mp3Exporter {
         this._downloadBlob(blob, "project.mp3");
     }
 
+    static async exportClipsToMp3(clips, filename = "selecion.mp3") {
+        const AudioBuffer = await WavExporter.renderClipsBuffer(clips);
+        const blob = this._encodeMp3(AudioBuffer);
+        this._downloadBlob(blob, filename);
+    }
+
     static _encodeMp3(audioBuffer) {
         const channels = audioBuffer.numberOfChannels;
         const sampleRate = audioBuffer.sampleRate;
