@@ -166,4 +166,8 @@ export class WavExporter {
         }
         return this._defaultSynth;
     }
+
+    static bufferToWavBlob(audioBuffer) {
+        return this._toWav(audioBuffer);
+    }
 }
