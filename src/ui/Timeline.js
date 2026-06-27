@@ -6,6 +6,9 @@ import { WavExporter } from "../export/WavExporter.js";
 import { Mp3Exporter } from "../export/MP3Exporter.js";
 import { saveProject, loadProject } from "../export/ProjectSerializer.js";
 import { file } from "jszip";
+import { importAudioFile } from "../export/ImportAudio.js";
+import { importMidiFIle } from "../export/ImportMidi.js";
+
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -549,7 +552,7 @@ export class Timeline {
             if (!file) return;
 
             const shouldClear = confirm(
-                "¿Quieres borrar todas las pistas actuales antes de cargar el proyecto?\n\n" +´
+                "¿Quieres borrar todas las pistas actuales antes de cargar el proyecto?\n\n" +
                 "Aceptar: se borran las pistas actuales. \n" + 
                 "Cancelar: el proyecto se añade a las pistas existentes."
             );
@@ -564,9 +567,42 @@ export class Timeline {
 
         loadBtn.addEventListener("click", () => fileInput.click());
 
+        const importBtn = document.createElement("button");
+        importBtn.style.cssText = exportAllBtn.style.cssText;
+        importBtn.textContent = "Importar pista";
+
+        const imporrtInput = document.createElement("input");
+        imporrtInput.type = "file";
+        imporrtInput.accept = ".wav, .mp3, .mid, .midi";
+        imporrtInput.style.display = "none";
+        imporrtInput.addEventListener("click", async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const ext = file.name.split(".").pop().toLowerCase();
+            try {
+                if (ext === "mid" || ext === "midi") {
+                    await importMidiFIle(file);
+                } else if (ext === "wav" || ext == "mp3") {
+                    await importAudioFile(file);
+                } else {
+                    alert("Formato no soportado" + ext);
+                }
+            } catch (err) {
+                console.error("Error importando archivo:", err);
+                alert("No se pudo importar el archivo: " + err.message);
+            }
+
+            imporrtInput.value = "";
+        });
+
+        importBtn.addEventListener("click", () => imporrtInput.click());
+
+        bar.appendChild(importBtn);
+        bar.appendChild(imporrtInput);
+
         bar.appendChild(loadBtn);
         bar.appendChild(fileInput);
-
         bar.appendChild(dropdown);
         return bar;
     }
