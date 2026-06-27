@@ -4,7 +4,6 @@ import { trackManager } from "../core/TrackManager";
 import { recorderEngine } from "../core/RecorderEngine";
 import { InstrumentFactory } from "../instrumental/Instruments";
 import { WavExporter } from "./WavExporter";
-import { version } from "react";
 
 const PROJECT_VERSION = 1;
 

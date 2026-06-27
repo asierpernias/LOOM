@@ -1,9 +1,11 @@
-import { trackManager } from "../core/TrackManager.js";
+import { TrackManager, trackManager } from "../core/TrackManager.js";
 import { InstrumentFactory } from "../instrumental/Instruments.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
 import { exportClipsToMidi, exportAllTracksToMidi } from "../export/MidiExporter.js"
 import { WavExporter } from "../export/WavExporter.js";
 import { Mp3Exporter } from "../export/MP3Exporter.js";
+import { saveProject, loadProject } from "../export/ProjectSerializer.js";
+import { file } from "jszip";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -526,6 +528,45 @@ export class Timeline {
         window.addEventListener("mousedown", closeOnOutsideClick);
 
         bar.appendChild(exportAllBtn);
+
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Guardar proyecto";
+        saveBtn.style.cssText = exportAllBtn.style.cssText;
+        saveBtn.addEventListener("click", () => {
+            saveProject("project.zip");
+        });
+        bar.appendChild(saveBtn);
+
+        const loadBtn = document.createElement("button");
+        loadBtn.textContent = "Carhar proyecto";
+        loadBtn.style.cssText = exportAllBtn.style.cssText;
+
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".zip";
+        fileInput.addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const shouldClear = confirm(
+                "¿Quieres borrar todas las pistas actuales antes de cargar el proyecto?\n\n" +´
+                "Aceptar: se borran las pistas actuales. \n" + 
+                "Cancelar: el proyecto se añade a las pistas existentes."
+            );
+            if (shoudlClear) {
+                for (const track of TrackManager.getAllTracks()) {
+                    trackManager.removeTrack(track.id);
+                }
+            }
+            await loadProject(file);
+            fileInput.value = "";
+        });
+
+        loadBtn.addEventListener("click", () => fileInput.click());
+
+        bar.appendChild(loadBtn);
+        bar.appendChild(fileInput);
+
         bar.appendChild(dropdown);
         return bar;
     }
