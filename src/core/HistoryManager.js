@@ -15,7 +15,7 @@ export class HistoryManager {
     }
 
     execute(command) {  
-        comand.execute();
+        command.execute();
 
         this._history = this._history.slice(0, this._index + 1);
         this._history.push(command);

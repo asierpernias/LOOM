@@ -1,4 +1,4 @@
-import { trackManager } from "../TrackManager";
+import { trackManager } from "../TrackManager.js";
 
 export class MoveClipCommand {
     constructor(clip, fromStartTime, toStartTime) {
@@ -19,9 +19,9 @@ export class TrimClipCommand {
     }
 
     _apply(state) {
-        this.clip.startTime = state.starTime;
+        this.clip.startTime = state.startTime;
         this.clip.duration = state.duration;
-        this.clip.trimStart = state.trimEnd;
+        this.clip.trimStart = state.trimStart;
         this.clip.trimEnd = state.trimEnd;
         trackManager._notify();
     }
@@ -38,6 +38,14 @@ export class SplitClipCommand {
     }
 
     execute() {
+        this.track.removeClip(this.leftClip.id);
+        this.track.removeClip(this.rightClip.id);
+        this.track.addClip(this.this.leftClip);
+        this.track.addClip(this.rightClip);
+        trackManager._notify();
+    }
+
+    undo() {
         this.track.removeClip(this.leftClip.id);
         this.track.removeClip(this.rightClip.id);
         this.track.addClip(this.originalClip);
