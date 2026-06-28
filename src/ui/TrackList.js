@@ -1,5 +1,7 @@
 import { trackManager} from "../core/TrackManager.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
+import { historyManager } from "../core/HistoryManager.js";
+import { ToggleMuteCommand, ToggleSoloCommand, SetVolumeCommand, CreateTrackCommand } from "../core/commands/Commands.js";
 
 export class TrackList {
     constructor(container, transport) {
@@ -33,7 +35,7 @@ export class TrackList {
         cursor: pointer;
         `;
         addButton.addEventListener("click", () => {
-            trackManager.createTrack({name: "Nueva pista", instrument: "synth"});
+            historyManager.execute(new CreateTrackCommand({name: "Nueva pista", instrument: "synth"}));
         });
         this.container.appendChild(addButton);
     }
@@ -85,7 +87,7 @@ export class TrackList {
         cursor: pointer;
         `;
         muteBtn.addEventListener("click", () => {
-            trackManager.toggleMute(track.id);
+            historyManager.execute(new ToggleMuteCommand(track.id));
         });
         row.appendChild(muteBtn);
 
@@ -99,7 +101,7 @@ export class TrackList {
         cursor: pointer;
         `;
         soloBtn.addEventListener("click", () => {
-            trackManager.toggleSolo(track.id);
+            historyManager.execute(new ToggleSoloCommand(track.id));
         });
         row.appendChild(soloBtn);
 
@@ -124,9 +126,23 @@ export class TrackList {
         volumeSlider.step = "0.01";
         volumeSlider.value = track.volume;
         volumeSlider.style.width = "60px";
+
+        let volumeBeforeDrag =  track.volume;
+        volumeSlider.addEventListener("pointerdown", () => {
+            volumeBeforeDrag = track.volume;
+        });
+
         volumeSlider.addEventListener("input", e => {
             track.setVolume(parseFloat(e.target.value));
         });
+
+        volumeSlider.addEventListener("change", () => {
+            const finalValue = track.volume;
+            if (finaleValue !== volumeBeforeDrag) {
+                track.setVolume(volumeBeforeDrag);
+                historyManager.execute(new SetVolumeCommand(track, volumeBeforeDrag, finalValue));
+            }
+        })
         row.appendChild(volumeSlider);
 
         return row;

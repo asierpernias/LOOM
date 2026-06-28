@@ -5,10 +5,10 @@ import { exportClipsToMidi, exportAllTracksToMidi } from "../export/MidiExporter
 import { WavExporter } from "../export/WavExporter.js";
 import { Mp3Exporter } from "../export/MP3Exporter.js";
 import { saveProject, loadProject } from "../export/ProjectSerializer.js";
-import { file } from "jszip";
 import { importAudioFile } from "../export/ImportAudio.js";
-import { importMidiFIle } from "../export/ImportMidi.js";
-
+import { importMidiFile } from "../export/ImportMidi.js";
+import { historyManager } from "../core/HistoryManager.js";
+import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand } from "../core/commands/Commands.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -31,6 +31,17 @@ export class Timeline {
         `;
 
         trackManager.onChange(() => this.render());
+        window.addEventListener("keydown", e => {
+            const isCtrl10rCmd = e.ctrlKey || e.metaKey;
+            if (!isCtrl10rCmd) return;
+
+            if (e.key === "z" || e.key === "Z") {
+                e.preventDefault();
+                historyManager.undo();
+            } else if (e.key === "y" || e.key === "Y") {
+                e.preventDefault();
+                historyManager.redo();
+            }});
         this.render();
     }
 
@@ -192,6 +203,7 @@ export class Timeline {
         let dragging = false;
         let startMouseX = 0;
         let startClipTime = 0;
+        let finalStart =  0;
 
         block.addEventListener("mousedown", e => {
             if (e.target !== block && e.target.tagName !== "CANVAS") return;
@@ -208,6 +220,7 @@ export class Timeline {
             dragging = true;
             startMouseX = e.clientX;
             startClipTime = clip.startTime;
+            finalStart = startClipTime;
             block.style.cursor = "grabbing";
             e.stopPropagation();
         });
@@ -217,7 +230,7 @@ export class Timeline {
             const deltaPx = e.clientX - startMouseX;
             const deltaTime = deltaPx / this.pixelsPerSecond;
             const proposedStart = Math.max(0, startClipTime + deltaTime);
-            const finalStart = this._resolveCollision(track, clip, proposedStart);
+            finalStart = this._resolveCollision(track, clip, proposedStart);
             clip.moveTo(finalStart);
             block.style.left = `${finalStart * this.pixelsPerSecond}px`;
         });
@@ -226,7 +239,13 @@ export class Timeline {
             if (!dragging) return;
             dragging = false;
             block.style.cursor = "grab";
-            this.render();
+
+            clip.moveTo(startClipTime);
+            if (finalStart !== startClipTime) {
+                historyManager.execute(new MoveClipCommand(clip, startClipTime, finalStart));
+            } else {
+                this.render();
+            }
         });
     }
 
@@ -275,22 +294,49 @@ export class Timeline {
         window.addEventListener("mouseup", () => {
             if (!dragging) return;
             dragging = false;
+
             const trimEndDelta = Math.max(0, (startTime + startDuration) - (clip.startTime + clip.duration));
             const trimStartDelta = Math.max(0, clip.startTime - startTime);
-            console.log("antes reset:", { clipStart: clip.startTime, clipDuration: clip.duration });
+
+            const before = {
+                startTime,
+                duration: startDuration,
+                trimStart: originalTrimStart,
+                trimEnd: originalTrimEnd,
+            };
+
             clip.startTime = startTime;
             clip.duration = startDuration;
             clip.trimStart = originalTrimStart;
             clip.trimEnd = originalTrimEnd;
-            console.log("trimStartDelta:", trimStartDelta, "trimEndDelta:", trimEndDelta, "startDuration:", startDuration, "clipDuration:", clip.duration);
-            console.log("trim:", { trimStartDelta, trimEndDelta, clipTrimStart: clip.trimStart, clipTrimEnd: clip.trimEnd });
+           
             clip.trim({ 
                 trimStart: trimStartDelta,
                 trimEnd: trimEndDelta,
             });
-            console.log("post trim:", { trimStart: clip.trimStart, trimEnd: clip.trimEnd });
 
-            this.render();
+            const after = {
+                startTime: clip.startTime,
+                duration: clip.duration,
+                trimStart: clip.trimStart,
+                trimEnd: clip.trimEnd,
+            };
+
+            clip.startTime = before.startTime;
+            clip.duration = before.duration;
+            clip.trimStart = before.trimStart;
+            clip.trimEnd = before.trimEnd;
+
+            const changed = before.startTime !== after.startTime
+                || before.duration !== after.duration
+                || before.trimStart !== after.trimStart
+                || before.trimEnd !== after.trimEnd;
+
+            if (changed) {
+                historyManager.execute(new TrimClipCommand(clip, before, after));
+            } else {
+                this.render();
+            }
         });
     }
 
@@ -358,11 +404,9 @@ export class Timeline {
                 
                 try {
                     const [left, right] = clip.split(absoluteTime);
-                    track.removeClip(clip.id);
-                    track.addClip(left);
-                    track.addClip(right);
                     if (left.notes.length > 0) await recorderEngine.renderClip(left, InstrumentFactory);
                     if (right.notes.length > 0) await recorderEngine.renderClip(right, InstrumentFactory);
+                    historyManager.execute(new SplitClipCommand(track, clip, left, right));
                 } catch (err) {
                     console.warn("Split:", err.message);
                 }
@@ -371,8 +415,7 @@ export class Timeline {
             menu.append(splitOption);
 
             const deleteOption = this._menuItem("Eliminar clip", () => {
-                track.removeClip(clip.id);
-                trackManager._notify();
+                historyManager.execute(new DeleteClipCommand(track, clip));
                 menu.remove();
             });
             menu.appendChild(deleteOption);
@@ -399,8 +442,8 @@ export class Timeline {
                 menu.appendChild(exportSelectionMp3Option);
                 
             
-            const exportClipOption = this._menuItem("Exportar clip a MIDI", () => {
-                exportClipsToMidi([clip], `${track.name ?? "clip"}.mid`);
+            const exportClipOption = this._menuItem("Exportar a MIDI", () => {
+                exportClipsToMidi(getSelectedClips(), "selection.mid");
                 menu.remove();
             });
             menu.appendChild(exportClipOption);
@@ -532,6 +575,18 @@ export class Timeline {
 
         bar.appendChild(exportAllBtn);
 
+        const undoBtn = document.createElement("button");
+        undoBtn.textContent = "Undo";
+        undoBtn.style.cssText = exportAllBtn.style.cssText;
+        undoBtn.addEventListener("click", () => historyManager.undo());
+        bar.appendChild(undoBtn);
+
+        const redoBtn = document.createElement("button");
+        redoBtn.textContent = "Redo";
+        redoBtn.style.cssText = exportAllBtn.style.cssText;
+        redoBtn.addEventListener("click", () => historyManager.redo());
+        bar.appendChild(redoBtn);
+
         const saveBtn = document.createElement("button");
         saveBtn.textContent = "Guardar proyecto";
         saveBtn.style.cssText = exportAllBtn.style.cssText;
@@ -547,6 +602,7 @@ export class Timeline {
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.accept = ".zip";
+        fileInput.style.display = "none";
         fileInput.addEventListener("change", async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -557,7 +613,7 @@ export class Timeline {
                 "Cancelar: el proyecto se añade a las pistas existentes."
             );
             if (shoudlClear) {
-                for (const track of TrackManager.getAllTracks()) {
+                for (const track of trackManager.getAllTracks()) {
                     trackManager.removeTrack(track.id);
                 }
             }
@@ -575,14 +631,14 @@ export class Timeline {
         imporrtInput.type = "file";
         imporrtInput.accept = ".wav, .mp3, .mid, .midi";
         imporrtInput.style.display = "none";
-        imporrtInput.addEventListener("click", async (e) => {
+        imporrtInput.addEventListener("change", async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const ext = file.name.split(".").pop().toLowerCase();
             try {
                 if (ext === "mid" || ext === "midi") {
-                    await importMidiFIle(file);
+                    await importMidiFile(file);
                 } else if (ext === "wav" || ext == "mp3") {
                     await importAudioFile(file);
                 } else {
