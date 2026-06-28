@@ -138,7 +138,7 @@ export class TrackList {
 
         volumeSlider.addEventListener("change", () => {
             const finalValue = track.volume;
-            if (finaleValue !== volumeBeforeDrag) {
+            if (finalValue !== volumeBeforeDrag) {
                 track.setVolume(volumeBeforeDrag);
                 historyManager.execute(new SetVolumeCommand(track, volumeBeforeDrag, finalValue));
             }

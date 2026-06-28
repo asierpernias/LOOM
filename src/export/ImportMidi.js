@@ -1,15 +1,15 @@
-import { Midi } from "tonejs/midi";
+import { Midi } from "@tonejs/midi";
 import { trackManager } from "../core/TrackManager.js";
 import { recorderEngine } from "../core/RecorderEngine.js";
-import { InstrumentFactory } from "../instrumental/Instruments";
+import { InstrumentFactory } from "../instrumental/Instruments.js";
 
-export async function importMidiFIle(file) {
+export async function importMidiFile(file) {
     const arrayBuffer = await file.arrayBuffer();
     const midi = new Midi(arrayBuffer);
 
     const allNotes = [];
     for (const midiTrack of midi.tracks) {
-        for (const notes of midiTrack.notes) {
+        for (const note of midiTrack.notes) {
             allNotes.push({
                 note: note.name,
                 start: note.time,

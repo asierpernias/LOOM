@@ -596,7 +596,7 @@ export class Timeline {
         bar.appendChild(saveBtn);
 
         const loadBtn = document.createElement("button");
-        loadBtn.textContent = "Carhar proyecto";
+        loadBtn.textContent = "Cargar proyecto";
         loadBtn.style.cssText = exportAllBtn.style.cssText;
 
         const fileInput = document.createElement("input");
