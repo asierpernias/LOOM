@@ -230,7 +230,7 @@ export class Timeline {
             const deltaPx = e.clientX - startMouseX;
             const deltaTime = deltaPx / this.pixelsPerSecond;
             const proposedStart = Math.max(0, startClipTime + deltaTime);
-            finalStart = this._resolveCollision(track, clip, proposedStart);
+            finalStart = track._findFreeSlot(clip.duration, proposedStart, clip.id);
             clip.moveTo(finalStart);
             block.style.left = `${finalStart * this.pixelsPerSecond}px`;
         });
@@ -477,32 +477,6 @@ export class Timeline {
         return item;
     }
 
-    _resolveCollision(track, clip, proposedStart) {
-        const clips = track.getClipsSorted().filter(c => c.id !== clip.id);
-
-        const duration = clip.duration;
-        let start = Math.max(0, proposedStart);
-
-        const sorted = clips.sort((a,b) => a.startTime - b.startTime);
-
-        for (const other of sorted) {
-            const overlap = 
-                start < other.endTime && start + duration > other.startTime;
-            
-            if (!overlap) continue;
-
-            const snapFoward = other.endTime;
-            const snapBackward = other.startTime - duration;
-
-            const distFoward = Math.abs(snapFoward - start);
-            const distBackward = Math.abs(snapBackward - start);
-
-            start = distFoward < distBackward ? snapFoward : snapBackward;
-
-            return this._resolveCollision(track, clip, start);
-        }
-        return start;
-    }
 
     renderToolbar() {
         const bar = document.createElement("div");
