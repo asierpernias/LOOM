@@ -8,7 +8,7 @@ import { saveProject, loadProject } from "../export/ProjectSerializer.js";
 import { importAudioFile } from "../export/ImportAudio.js";
 import { importMidiFile } from "../export/ImportMidi.js";
 import { historyManager } from "../core/HistoryManager.js";
-import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand } from "../core/commands/Commands.js";
+import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand } from "../core/commands/Commands.js";
 import { projectSettings } from "../core/ProjectSettings.js";
 
 export class Timeline {
@@ -600,6 +600,12 @@ export class Timeline {
                 menu.remove();
             });
             menu.appendChild(deleteOption);
+
+            const duplicateOption = this._menuItem("Duplicar clip", () => {
+                historyManager.execute(new DuplicateClipCommand(track, clip));
+                menu.remove();
+            });
+            menu.appendChild(duplicateOption);
 
             document.body.appendChild(menu);
 

@@ -110,4 +110,17 @@ export class Clip {
     moveTo(newStartTime) {
         this.startTime = newStartTime;
     }
+
+    clone() {
+        return new Clip({
+            audioData: this.audioData, 
+            startTime: this.startTime,
+            duration: this.duration,
+            trimStart: this.trimStart,
+            trimEnd: this.trimEnd,
+            fadeIn: this.fadeIn,
+            fadeOut: this.fadeOut,
+            notes: this.notes.map(n => ({...n}))
+        });
+    }
 }

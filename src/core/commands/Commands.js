@@ -138,3 +138,22 @@ export class FadeClipCommand {
     undo() { this._apply(this.before)}
 
 }
+
+export class DuplicateClipCommand {
+    constructor(track, originalClip) {
+        this.track = track;
+        this.clip = originalClip.clone();
+
+        this.clip.startTime = originalClip.startTime + originalClip.duration;
+    }
+
+    execute() {
+        this.track.addClip(this.clip);
+        trackManager._notify();
+    }
+
+    undo() {
+        this.track.removeCLip(this.clip.id);
+        trackManager._notify();
+    }
+}
