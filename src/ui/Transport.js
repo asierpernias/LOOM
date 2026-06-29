@@ -65,6 +65,44 @@ export class Transport {
         `;
     }
 
+    _createPlayer(track, clip) {
+        
+        const fadeIn = clip.fadeIn ?? 0;
+        const fadeOut = clip.fadeOut ?? 0;
+
+        let destination = audioEngine.playbackChannel;
+        let gainNode = null;
+
+        if (fadeIn > 0 || fadeOut > 0) {
+            gainNode = new Tone.Gain(fadeIn > 0 ? 0 : 1).connect(audioEngine.playbackChannel);
+            destination = gainNode;
+            this._scheduledPlayers.push(gainNode);
+        }
+
+        const player = new Tone.Player(clip.audioData)
+            .connect(destination);
+        player.volume.value = Tone.gainToDb(track.volume); 
+        player.sync().start(clip.startTime, clip.trimStart ?? 0);
+        player.offset = clip.trimStart ?? 0;
+        this._scheduledPlayers.push(player);
+
+        if (gainNode) {
+            if (fadeIn > 0) {
+                Tone.Transport.schedule((time) => {
+                    gainNode.gain.setValueAtTime(0, time);
+                    gainNode.gain.linearRampToValueAtTime(1, time + fadeIn);
+                }, clip.startTime); 
+            }
+            if (fadeOut > 0) {
+                const fadeOutStart = clip.startTime + clip.duration - fadeOut;
+                Tone.Transport.schedule((time) => {
+                    gainNode.gain.setValueAtTime(1, time);
+                    gainNode.gain.linearRampToValueAtTime(0, time + fadeOut);
+                }, fadeOutStart);
+            }
+        }
+    }
+
     playAll() {
 
         if (this.isPlaying) return;
@@ -83,41 +121,7 @@ export class Transport {
 
             for (const clip of track.getClipsSorted()) {
                 if (!clip.audioData) continue;
-
-                const fadeIn = clip.fadeIn ?? 0;
-                const fadeOut = clip.fadeOut ?? 0;
-
-                let destination = audioEngine.playbackChannel;
-                let gainNode = null;
-
-                if (fadeIn > 0 || fadeOut > 0) {
-                    gainNode = new Tone.Gain(fadeIn > 0 ? 0 : 1).connect(audioEngine.playbackChannel);
-                    destination = gainNode;
-                    this._scheduledPlayers.push(gainNode);
-                }
-
-                const player = new Tone.Player(clip.audioData)
-                    .connect(destination);
-                player.volume.value = Tone.gainToDb(track.volume); 
-                player.sync().start(clip.startTime, clip.trimStart ?? 0);
-                player.offset = clip.trimStart ?? 0;
-                this._scheduledPlayers.push(player);
-
-                if (gainNode) {
-                    if (fadeIn > 0) {
-                        Tone.Transport.schedule((time) => {
-                            gainNode.gain.setValueAtTime(0, time);
-                            gainNode.gain.linearRampToValueAtTime(1, time + fadeIn);
-                        }, clip.startTime); 
-                    }
-                    if (fadeOut > 0) {
-                        const fadeOutStart = clip.startTime + clip.duration - fadeOut;
-                        Tone.Transport.schedule((time) => {
-                            gainNode.gain.setValueAtTime(0, time);
-                            gainNode.gain.linearRampToValueAtTime(0, time + fadeOut);
-                        }, fadeOutStart);
-                    }
-                }
+                this._createPlayer(track, clip);
             }
         }
 
@@ -177,10 +181,7 @@ export class Transport {
 
         for (const clip of track.getClipsSorted()) {
             if (!clip.audioData) continue;
-            const player = new Tone.Player(clip.audioData)
-                .connect(audioEngine.playbackChannel);
-            player.sync().start(clip.startTime);
-            this._scheduledPlayers.push(player);
+            this._createPlayer(track, clip);
         }
 
         audioEngine.setPlaybackVolume(1);
