@@ -9,6 +9,7 @@ import { importAudioFile } from "../export/ImportAudio.js";
 import { importMidiFile } from "../export/ImportMidi.js";
 import { historyManager } from "../core/HistoryManager.js";
 import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand } from "../core/commands/Commands.js";
+import { projectSettings } from "../core/ProjectSettings.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -31,6 +32,7 @@ export class Timeline {
         `;
 
         trackManager.onChange(() => this.render());
+        projectSettings.onChange(() => this.render());
         window.addEventListener("keydown", e => {
             const isCtrl10rCmd = e.ctrlKey || e.metaKey;
             if (!isCtrl10rCmd) return;
@@ -42,6 +44,13 @@ export class Timeline {
                 e.preventDefault();
                 historyManager.redo();
             }});
+        this.container.addEventListener("wheel", e => {
+            if (!(e.ctrlKey  || e.metaKey)) return;
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -10 : 10;
+            this.pixelsPerSecond = Math.max(5, Math.min(300, this.pixelsPerSecond + delta));
+            this.render();
+        });
         this.render();
     }
 
@@ -66,6 +75,46 @@ export class Timeline {
         this._cursorEl.style.display = this.transport.isPlaying ? "block" : "none";
     }
 
+    _renderGrid(lanesWrapper, totalWidth) {
+        const snapSeconds =projectSettings.getSnapSeconds();
+        if (snapSeconds === null) return;
+
+        const gridContainer = document.createElement("div");
+        gridContainer.style.cssText = `
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 80;
+        width: ${totalWidth}px;
+        pointer-events: none;
+        z-index: 0;
+        `;
+
+        const totalSeconds = totalWidth / this.pixelsPerSecond;
+        const lineCount = Math.ceil(totalSeconds / snapSeconds);
+
+        for (let i = 0; i <= lineCount; i++) {
+            const time = i * snapSeconds;
+            const left = time * this.pixelsPerSecond;
+
+
+            const line = document.createElement("div");
+            const isBeatStart = i % 4 === 0;
+
+            line.style.cssText = ` 
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: ${left}px;
+            width: 1px;
+            background: ${isBeatStart ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.01)"};
+            `;
+            gridContainer.appendChild(line);
+        }
+
+        lanesWrapper.appendChild(gridContainer);
+    }
+
     render() {
         this.container.innerHTML = "";
 
@@ -83,6 +132,12 @@ export class Timeline {
                 this.render();
             }
         });
+
+        const AllClips = trackManager.getAllTracks().flatMap(t => t.getClipsSorted());
+        const maxEndTime = AllClips.reduce((max, c) => Math.max(max, c.endTime), 0);
+        const totalWidth = Math.max(8, (maxEndTime + 10) * this.pixelsPerSecond);
+
+        this._renderGrid(lanesWrapper, totalWidth);
 
         for (const track of trackManager.getAllTracks()) {
             lanesWrapper.appendChild(this._renderTrackLane(track));
@@ -230,7 +285,8 @@ export class Timeline {
             const deltaPx = e.clientX - startMouseX;
             const deltaTime = deltaPx / this.pixelsPerSecond;
             const proposedStart = Math.max(0, startClipTime + deltaTime);
-            finalStart = track._findFreeSlot(clip.duration, proposedStart, clip.id);
+            const snappedStart = projectSettings.snapToGrid(proposedStart);
+            finalStart = track._findFreeSlot(clip.duration, snappedStart, clip.id);
             clip.moveTo(finalStart);
             block.style.left = `${finalStart * this.pixelsPerSecond}px`;
         });
@@ -549,7 +605,55 @@ export class Timeline {
 
         bar.appendChild(exportAllBtn);
 
-        const undoBtn = document.createElement("button");
+        const bpmLabel = document.createElement("label");
+        bpmLabel.textContent = "BPM";
+        bpmLabel.style.cssText = "color: white; font-family: monospace; font-size: 0.8rem; display: flex; align-items:center; gap: 4px;";
+
+        const bpmInput = document.createElement("input");
+        bpmInput.type = "number";
+        bpmInput.min = "20";
+        bpmInput.max = "400";
+        bpmInput.value = projectSettings.bpm;
+        bpmInput.style.cssText = "width: 50px; font-family: monospace;";
+        bpmInput.addEventListener("change", () => {
+            projectSettings.setBpm(parseInt(bpmInput.value, 10));
+        });
+        bpmLabel.appendChild(bpmInput);
+        bar.appendChild(bpmLabel);
+
+        const snapSelect = document.createElement("select");
+        snapSelect.style.cssText = "font-family: monospace; background: #111; color: white; border: 1px solid #555;";
+        for (const value of ["1/4", "1/8", "1/16", "free"]) {
+            const opt = document.createElement("option");
+            opt.value = value;
+            opt.textContent = value === "free" ? "Libre" : value;
+            if (value === projectSettings.snapResolution) opt.selected = true;
+            snapSelect.appendChild(opt);
+        }
+        snapSelect.addEventListener("change", () => {
+            projectSettings.setSnapResolution(snapSelect.value);
+        });
+        bar.appendChild(snapSelect);
+
+        const zoomOutBtn = document.createElement("button");
+        zoomOutBtn.textContent = "-";
+        zoomOutBtn.style.cssText = exportAllBtn.style.cssText; 
+        zoomOutBtn.addEventListener("click", () => {
+            this.pixelsPerSecond = Math.max(5, this.pixelsPerSecond - 10);
+            this.render();
+        })
+        bar.appendChild(zoomOutBtn);
+
+        const zoomInBtn = document.createElement("button");
+        zoomInBtn.textContent = "+";
+        zoomInBtn.style.cssText = exportAllBtn.style.cssText;
+        zoomInBtn.addEventListener("click", () => {
+            this.pixelsPerSecond = Math.min(300, this.pixelsPerSecond + 10);
+            this.render();
+        });
+        bar.appendChild(zoomInBtn);
+
+        const undoBtn = document.createElement("button"); 
         undoBtn.textContent = "Undo";
         undoBtn.style.cssText = exportAllBtn.style.cssText;
         undoBtn.addEventListener("click", () => historyManager.undo());
@@ -586,7 +690,7 @@ export class Timeline {
                 "Aceptar: se borran las pistas actuales. \n" + 
                 "Cancelar: el proyecto se añade a las pistas existentes."
             );
-            if (shoudlClear) {
+            if (shouldClear) {
                 for (const track of trackManager.getAllTracks()) {
                     trackManager.removeTrack(track.id);
                 }
