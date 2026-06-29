@@ -336,8 +336,27 @@ export class Timeline {
     _attachDragMove(block, clip, track) {
         let dragging = false;
         let startMouseX = 0;
-        let startClipTime = 0;
-        let finalStart =  0;
+        const before = [];
+
+        for (const t of trackManager.getAllTracks()) {
+            for (const c of t.getClipsSorted()) {
+                if (this.selectedClips.has(c.id)) {
+                    before.push({
+                        clip: c,
+                        track: t,
+                        startTime: c.startTime
+                    });
+                }
+            }
+        }
+        if (before.length === 0) {
+            before.push({
+                clip,
+                track,
+                startTime: clip.startTime
+            });
+        }
+        
 
         block.addEventListener("mousedown", e => {
             if (e.target !== block && e.target.tagName !== "CANVAS") return;
@@ -350,11 +369,8 @@ export class Timeline {
                 }
                 this._refreshSelectionStyles();
             }
-            
             dragging = true;
             startMouseX = e.clientX;
-            startClipTime = clip.startTime;
-            finalStart = startClipTime;
             block.style.cursor = "grabbing";
             e.stopPropagation();
         });
@@ -363,11 +379,14 @@ export class Timeline {
             if (!dragging) return;
             const deltaPx = e.clientX - startMouseX;
             const deltaTime = deltaPx / this.pixelsPerSecond;
-            const proposedStart = Math.max(0, startClipTime + deltaTime);
-            const snappedStart = projectSettings.snapToGrid(proposedStart);
-            finalStart = track._findFreeSlot(clip.duration, snappedStart, clip.id);
-            clip.moveTo(finalStart);
-            block.style.left = `${finalStart * this.pixelsPerSecond}px`;
+
+            for (const item of before) {
+                const proposedStart = Math.max(0, item.startTime + deltaTime);
+                const snappedStart = projectSettings.snapToGrid(proposedStart);
+                const finalStart = item.track._findFreeSlot(item.clip.duration, snappedStart, item.clip.id);
+                item.clip.moveTo(finalStart);
+            }
+            this.render();
         });
 
         window.addEventListener("mouseup", () => {
@@ -375,12 +394,8 @@ export class Timeline {
             dragging = false;
             block.style.cursor = "grab";
 
-            clip.moveTo(startClipTime);
-            if (finalStart !== startClipTime) {
-                historyManager.execute(new MoveClipCommand(clip, startClipTime, finalStart));
-            } else {
-                this.render();
-            }
+            this.render();
+            
         });
     }
 
