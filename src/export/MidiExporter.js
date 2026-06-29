@@ -1,5 +1,6 @@
 import MidiWriter from "midi-writer-js";
 import * as Tone from "tone";
+import { busyOverlay } from "../ui/BusyOverlay.js";
 
 const TICKS_PER_BEAT = 120;
 const DEFAULT_BPM = 120;
@@ -83,16 +84,22 @@ function downloadBlob(blob, filename) {
  */
 
 export function exportClipsToMidi(clips, filename = "export.mid", bpm = DEFAULT_BPM) {
-    if (!clips || clips.length === 0) {
-        console.warn("No hay clips para exportar");
-        return;
+    busyOverlay.show("Exportando MIDI...");
+    try {
+        if (!clips || clips.length === 0) {
+            console.warn("No hay clips para exportar");
+            return;
+        }
+
+        const midiTrack = buildMidiTrackFromClips(clips, bpm);
+        const writer = new MidiWriter.Writer([midiTrack]);
+        const blob = new Blob([writer.buildFile()], { type: "audio/midi"});
+
+        downloadBlob(blob, filename);
+    } finally {
+        busyOverlay.hide();
     }
-
-    const midiTrack = buildMidiTrackFromClips(clips, bpm);
-    const writer = new MidiWriter.Writer([midiTrack]);
-    const blob = new Blob([writer.buildFile()], { type: "audio/midi"});
-
-    downloadBlob(blob, filename);
+   
 }
 
 
@@ -103,26 +110,33 @@ export function exportClipsToMidi(clips, filename = "export.mid", bpm = DEFAULT_
  */
 
 export function exportAllTracksToMidi(tracks, filename = "proyecto.mid", bpm = DEFAULT_BPM) {
-    const midiTracks = [];
+    busyOverlay.show("Exportando MIDI");
 
-    for (const track of tracks) {
-        const clips = track.getClipsSorted();
-        if (clips.length === 0) continue;
+    try {
+        const midiTracks = [];
 
-        const hasNotes = clips.some(c => c.notes && c.notes.length > 0);
-        if (!hasNotes) continue;
+        for (const track of tracks) {
+            const clips = track.getClipsSorted();
+            if (clips.length === 0) continue;
 
-        const midiTrack = buildMidiTrackFromClips(clips, bpm);
-        midiTrack.addTrackName(track.name ?? "Track");
-        midiTracks.push(midiTrack);
+            const hasNotes = clips.some(c => c.notes && c.notes.length > 0);
+            if (!hasNotes) continue;
+
+            const midiTrack = buildMidiTrackFromClips(clips, bpm);
+            midiTrack.addTrackName(track.name ?? "Track");
+            midiTracks.push(midiTrack);
+        }
+
+        if (midiTracks.length === 0) {
+            console.warn("Sin notas en las pistas");
+            return;
+        }
+
+        const writer = new MidiWriter.Writer(midiTracks);
+        const blob = new Blob([writer.buildFile()], {type: "audio/midi"});
+        downloadBlob(blob, filename);
+    } finally {
+        busyOverlay.hide();
     }
 
-    if (midiTracks.length === 0) {
-        console.warn("Sin notas en las pistas");
-        return;
-    }
-
-    const writer = new MidiWriter.Writer(midiTracks);
-    const blob = new Blob([writer.buildFile()], {type: "audio/midi"});
-    downloadBlob(blob, filename);
 }

@@ -1,17 +1,29 @@
 import lamejs from "@breezystack/lamejs";
 import { WavExporter } from "./WavExporter.js";
+import { busyOverlay } from "../ui/BusyOverlay.js";
 
 export class Mp3Exporter {
     static async exportProjectToMp3() {
-        const audioBuffer = await WavExporter.renderProjectBuffer();
-        const blob = this._encodeMp3(audioBuffer);
-        this._downloadBlob(blob, "project.mp3");
+        busyOverlay.show("Exportando MP3...")
+       try {
+            const audioBuffer = await WavExporter.renderProjectBuffer();
+            const blob = this._encodeMp3(audioBuffer);
+            this._downloadBlob(blob, "project.mp3");
+       } finally {
+        busyOverlay.hide();
+       }
     }
 
     static async exportClipsToMp3(clips, filename = "selecion.mp3") {
-        const AudioBuffer = await WavExporter.renderClipsBuffer(clips);
-        const blob = this._encodeMp3(AudioBuffer);
-        this._downloadBlob(blob, filename);
+        busyOverlay.show("Exportando MP3...");
+
+        try{    
+            const AudioBuffer = await WavExporter.renderClipsBuffer(clips);
+            const blob = this._encodeMp3(AudioBuffer);
+            this._downloadBlob(blob, filename);
+        } finally {
+            busyOverlay.hide();
+        }
     }
 
     static _encodeMp3(audioBuffer) {

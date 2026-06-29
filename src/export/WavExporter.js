@@ -1,11 +1,16 @@
 import * as Tone from "tone";
 import  {trackManager} from "../core/TrackManager.js";
-
+import { busyOverlay } from "../ui/BusyOverlay.js";
 export class WavExporter {
 
     static async exportProjectToWav() {
-        const buffer = await WavExporter.renderProjectBuffer();
-        return this._toWav(buffer);
+        busyOverlay.show("Exportando WAV...");
+        try {
+            const buffer = await WavExporter.renderProjectBuffer();
+            return this._toWav(buffer);
+        } finally {
+            busyOverlay.hide();
+        }
     }
      
     static async renderProjectBuffer(){
@@ -27,9 +32,15 @@ export class WavExporter {
     }
 
     static async exportClipsToWav(clips, filename = "seleccion.wav") {
-        const buffer = await this.renderClipsBuffer(clips);
-        const blob = this._toWav(buffer);
-        this._downloadBlob(blob, filename);
+        busyOverlay.show("Exportando WAV...");
+        try {
+            const buffer = await this.renderClipsBuffer(clips);
+            const blob = this._toWav(buffer);
+            this._downloadBlob(blob, filename);
+        } finally {
+            busyOverlay.hide();
+        }
+        
     }
 
     static async renderClipsBuffer(clips) {

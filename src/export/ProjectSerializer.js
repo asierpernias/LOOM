@@ -4,61 +4,68 @@ import { trackManager } from "../core/TrackManager";
 import { recorderEngine } from "../core/RecorderEngine";
 import { InstrumentFactory } from "../instrumental/Instruments";
 import { WavExporter } from "./WavExporter";
+import { busyOverlay } from "../ui/BusyOverlay";
 
 const PROJECT_VERSION = 1;
 
 export async function saveProject(filename = "proyecto.zip") {
-    const zip = new JSZip();
-    const clipsFolder = zip.folder("clips");
+    busyOverlay.show("Guardando proyecto...");
+    try {
+        const zip = new JSZip();
+        const clipsFolder = zip.folder("clips");
 
-    const tracksData = [];
+        const tracksData = [];
 
-    for (const track of trackManager.getAllTracks()) {
-        const clipsData = [];
+        for (const track of trackManager.getAllTracks()) {
+            const clipsData = [];
 
-        for (const clip of track.getClipsSorted()) {
-            const hasNotes = clip.notes && clip.notes.length > 0;
+            for (const clip of track.getClipsSorted()) {
+                const hasNotes = clip.notes && clip.notes.length > 0;
 
-            let audioFile = null;
-            if (!hasNotes && clip.audioData) {
-                const wavBlob = WavExporter.bufferToWavBlob(clip.audioData);
-                const wavBuffer = await wavBlob.arrayBuffer();
-                audioFile = `clips/clip_${clip.id}.wav`;
-                clipsFolder.file(`clip_${clip.id}.wav`, wavBuffer);
+                let audioFile = null;
+                if (!hasNotes && clip.audioData) {
+                    const wavBlob = WavExporter.bufferToWavBlob(clip.audioData);
+                    const wavBuffer = await wavBlob.arrayBuffer();
+                    audioFile = `clips/clip_${clip.id}.wav`;
+                    clipsFolder.file(`clip_${clip.id}.wav`, wavBuffer);
+                }
+
+                clipsData.push({
+                    id: clip.id,
+                    startTime: clip.startTime,
+                    duration: clip.duration,
+                    trimStart: clip.trimStart ?? 0,
+                    trimEnd: clip.trimEnd ?? 0,
+                    notes: clip.notes ?? [],
+                    audioFile,
+                    fadeIn: clip.fadeIn ?? 0,
+                    fadeOut: clip.fadeOut ?? 0,
+                });
             }
 
-            clipsData.push({
-                id: clip.id,
-                startTime: clip.startTime,
-                duration: clip.duration,
-                trimStart: clip.trimStart ?? 0,
-                trimEnd: clip.trimEnd ?? 0,
-                notes: clip.notes ?? [],
-                audioFile,
-                fadeIn: clip.fadeIn ?? 0,
-                fadeOut: clip.fadeOut ?? 0,
+            tracksData.push({
+                name: track.name,
+                instrument: track.instrument,
+                volume: track.volume,
+                muted: track.muted,
+                solo: track.solo,
+                clips: clipsData,
             });
         }
 
-        tracksData.push({
-            name: track.name,
-            instrument: track.instrument,
-            volume: track.volume,
-            muted: track.muted,
-            solo: track.solo,
-            clips: clipsData,
-        });
+        const projectJson = {
+            version: PROJECT_VERSION,
+            tracks: tracksData,
+        };
+
+        zip.file("project.json", JSON.stringify(projectJson, null, 2));
+
+        const blob = await zip.generateAsync({type: "blob"});
+        downloadBlob(blob, filename);
+    } finally {
+        busyOverlay.hide();
     }
-
-    const projectJson = {
-        version: PROJECT_VERSION,
-        tracks: tracksData,
-    };
-
-    zip.file("project.json", JSON.stringify(projectJson, null, 2));
-
-    const blob = await zip.generateAsync({type: "blob"});
-    downloadBlob(blob, filename);
+    
 }
 
 export async function loadProject(file) {
