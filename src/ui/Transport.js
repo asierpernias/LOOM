@@ -105,13 +105,17 @@ export class Transport {
 
                 if (gainNode) {
                     if (fadeIn > 0) {
-                        gainNode.gain.setValueAtTime(0, clip.startTime);
-                        gainNode.gain.linearRampToValueAtTime(1, clip.startTime + fadeIn);
+                        Tone.Transport.schedule((time) => {
+                            gainNode.gain.setValueAtTime(0, time);
+                            gainNode.gain.linearRampToValueAtTime(1, time + fadeIn);
+                        }, clip.startTime); 
                     }
                     if (fadeOut > 0) {
                         const fadeOutStart = clip.startTime + clip.duration - fadeOut;
-                        gainNode.gain.setValueAtTime(0, fadeOutStart);
-                        gainNode.gain.linearRampToValueAtTime(1, clip.startTime + clip.duration);
+                        Tone.Transport.schedule((time) => {
+                            gainNode.gain.setValueAtTime(0, time);
+                            gainNode.gain.linearRampToValueAtTime(0, time + fadeOut);
+                        }, fadeOutStart);
                     }
                 }
             }

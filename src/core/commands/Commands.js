@@ -124,10 +124,10 @@ export class SetVolumeCommand {
 }
 
 export class FadeClipCommand {
-    construtor(clip, before, after) {
+    constructor(clip, before, after) {
         this.clip = clip;
         this.before = before;
-        this.after;
+        this.after = after;
     }
     _apply(state) {
         this.clip.fadeIn = state.fadeIn;

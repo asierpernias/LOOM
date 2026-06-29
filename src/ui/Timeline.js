@@ -283,6 +283,7 @@ export class Timeline {
         border-radius: 50%;
         transform: translate(-50%, -50%);
         pointer-events: auto;
+        z-index: 10;
         `;
         fadeInHandle.style.left = `${fadeInPx}px`;
         fadeInHandle.style.top = "0px";
@@ -300,6 +301,7 @@ export class Timeline {
         border-radius: 50%;
         transform: translate(-50%, -50%);
         pointer-events: auto;
+        z-index: 10;
         `;
         fadeOutHandle.style.left = `${width - fadeOutPx}px`;
         fadeOutHandle.style.top = "0px";
