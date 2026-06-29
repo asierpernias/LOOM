@@ -8,7 +8,7 @@ import { saveProject, loadProject } from "../export/ProjectSerializer.js";
 import { importAudioFile } from "../export/ImportAudio.js";
 import { importMidiFile } from "../export/ImportMidi.js";
 import { historyManager } from "../core/HistoryManager.js";
-import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand } from "../core/commands/Commands.js";
+import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand } from "../core/commands/Commands.js";
 import { projectSettings } from "../core/ProjectSettings.js";
 
 export class Timeline {
@@ -282,7 +282,7 @@ export class Timeline {
         background: #C97A4A;
         border-radius: 50%;
         transform: translate(-50%, -50%);
-        pointer-events: none;
+        pointer-events: auto;
         `;
         fadeInHandle.style.left = `${fadeInPx}px`;
         fadeInHandle.style.top = "0px";
@@ -299,9 +299,9 @@ export class Timeline {
         background: #C97A4A;
         border-radius: 50%;
         transform: translate(-50%, -50%);
-        pointer-events: none;
+        pointer-events: auto;
         `;
-        fadeOutHandle.style.LEFT = `${width - fadeOutPx}px`;
+        fadeOutHandle.style.left = `${width - fadeOutPx}px`;
         fadeOutHandle.style.top = "0px";
 
         block.appendChild(fadeOutHandle);
@@ -324,6 +324,8 @@ export class Timeline {
         this._attachDragMove(block, clip, track);
         this._attachDragTrim(leftHandle, clip, "start");
         this._attachDragTrim(rightHandle, clip, "end");
+        this._attachDragFade(fadeInHandle, clip, "in");
+        this._attachDragFade(fadeOutHandle, clip, "out");
 
         this._attachContextMenu(block, clip, track);
         return block;
@@ -379,6 +381,8 @@ export class Timeline {
             }
         });
     }
+
+    
 
     _attachDragTrim(handle, clip, side) {
         let dragging = false;
@@ -472,6 +476,50 @@ export class Timeline {
     }
 
     
+    _attachDragFade(handle, clip, side) {
+
+        let startMouseX;
+        let startFade;
+
+        handle.addEventListener("mousedown", e => {
+            e.stopPropagation();
+
+            startMouseX = e.clientX;
+            startFade = side === "in"
+                ? clip.fadeIn
+                : clip.fadeOut;
+            const before = {fadeIn: clip.fadeIn, fadeOut: clip.fadeOut};
+            const onMove = e => {
+                const deltaSeconds = (e.clientX -startMouseX) /this.pixelsPerSecond;
+
+                if (side === "in") {
+                    clip.fadeIn = Math.max(0, Math.min(clip.duration, startFade + deltaSeconds));
+                } else {
+                    clip.fadeOut = Math.max(0, Math.min(clip.duration, startFade - deltaSeconds));
+                }
+                    
+                trackManager._notify();
+            };
+
+
+        const onUp = () => {
+            window.removeEventListener("mousemove", onMove);
+
+            const after = {fadeIn: clip.fadeIn, fadeOut: clip.fadeOut};
+            clip.fadeIn = before.fadeIn;
+            clip.fadeOut = before.fadeOut;
+
+            if (after.fadeIn !== before.fadeIn || after.fadeOut !== before.fadeOut) {
+                historyManager.execute(new FadeClipCommand(clip, before, after));
+            } else {
+                this.render();
+            }
+        };
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp, {once: true});
+        });
+    }
 
     _drawWaveform(canvas, audioBuffer) {
         const ctx = canvas.getContext("2d");
@@ -835,4 +883,5 @@ export class Timeline {
             el.style.borderColor = isSelected ? "#C97A4A" : "#555";
         });
     }
-}
+
+} 

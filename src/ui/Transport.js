@@ -84,13 +84,36 @@ export class Transport {
             for (const clip of track.getClipsSorted()) {
                 if (!clip.audioData) continue;
 
+                const fadeIn = clip.fadeIn ?? 0;
+                const fadeOut = clip.fadeOut ?? 0;
+
+                let destination = audioEngine.playbackChannel;
+                let gainNode = null;
+
+                if (fadeIn > 0 || fadeOut > 0) {
+                    gainNode = new Tone.Gain(fadeIn > 0 ? 0 : 1).connect(audioEngine.playbackChannel);
+                    destination = gainNode;
+                    this._scheduledPlayers.push(gainNode);
+                }
+
                 const player = new Tone.Player(clip.audioData)
-                    .connect(audioEngine.playbackChannel);
+                    .connect(destination);
                 player.volume.value = Tone.gainToDb(track.volume); 
                 player.sync().start(clip.startTime, clip.trimStart ?? 0);
                 player.offset = clip.trimStart ?? 0;
                 this._scheduledPlayers.push(player);
-                console.log("Player creado, buffer cargado:", player.loaded, "duración buffer:", player.buffer?.duration);
+
+                if (gainNode) {
+                    if (fadeIn > 0) {
+                        gainNode.gain.setValueAtTime(0, clip.startTime);
+                        gainNode.gain.linearRampToValueAtTime(1, clip.startTime + fadeIn);
+                    }
+                    if (fadeOut > 0) {
+                        const fadeOutStart = clip.startTime + clip.duration - fadeOut;
+                        gainNode.gain.setValueAtTime(0, fadeOutStart);
+                        gainNode.gain.linearRampToValueAtTime(1, clip.startTime + clip.duration);
+                    }
+                }
             }
         }
 
@@ -126,8 +149,10 @@ export class Transport {
 
     _cleanupPlayers() {
         for (const player of this._scheduledPlayers) {
-            player.unsync();
-            player.dispose();
+            if (typeof player.unsync === "function") {
+                player.unsync()
+            }
+            player.dispose()
         }
         this._scheduledPlayers = [];
     }

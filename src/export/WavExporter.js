@@ -68,6 +68,29 @@ export class WavExporter {
             player.start(clip.startTime);
         }
 
+        
+        const fadeIn = clip.fadeIn ?? 0;
+        const fadeOut = clip.fadeOut ?? 0;
+        
+        let destination = audioEngine.playbackChannel;
+        let gainNode = null;
+        
+        if (fadeIn > 0 || fadeOut > 0) {
+            gainNode = new Tone.Gain(fadeIn > 0 ? 0 : 1).toDestination();
+            player.disconnect();
+            player.connect(gainNode);
+
+            if (fadeIn > 0) {
+                gainNode.gain.setValueAtTime(0, clip.startTime);
+                gainNode.gain.linearRampToValueAtTime(1, clip.startTime + fadeIn);
+            }
+            if (fadeOut > 0) {
+                const fadeOutStart = clip.startTime + clip.duration - fadeOut; 
+                gainNode.gain.setValueAtTime(0, fadeOutStart);
+                gainNode.gain.linearRampToValueAtTime(1, clip.startTime + clip.duration);
+            }
+        }
+
         if (clip.notes && clip.notes.length) {
             const synth = track ? this._getSynth(track) : this._getDefaultSynth();
 

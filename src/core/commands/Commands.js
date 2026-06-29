@@ -122,3 +122,19 @@ export class SetVolumeCommand {
     execute() { this.track.setVolume(this.to); trackManager._notify(); }
     undo() { this.track.setVolume(this.from); trackManager._notify(); }
 }
+
+export class FadeClipCommand {
+    construtor(clip, before, after) {
+        this.clip = clip;
+        this.before = before;
+        this.after;
+    }
+    _apply(state) {
+        this.clip.fadeIn = state.fadeIn;
+        this.clip.fadeOut = state.fadeOut;
+        trackManager._notify()
+    }
+    execute() { this._apply(this.after); }
+    undo() { this._apply(this.before)}
+
+}

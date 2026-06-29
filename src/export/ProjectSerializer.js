@@ -33,7 +33,7 @@ export async function saveProject(filename = "proyecto.zip") {
                 duration: clip.duration,
                 trimStart: clip.trimStart ?? 0,
                 trimEnd: clip.trimEnd ?? 0,
-                notes: clip.notes ?? 0,
+                notes: clip.notes ?? [],
                 audioFile,
                 fadeIn: clip.fadeIn ?? 0,
                 fadeOut: clip.fadeOut ?? 0,
