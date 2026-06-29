@@ -208,6 +208,9 @@ export class Timeline {
     _renderClipBlock(clip, track) {
         const width = Math.max(20, clip.duration * this.pixelsPerSecond);
         const left = clip.startTime * this.pixelsPerSecond;
+        const fadeInPx = clip.fadeIn * this.pixelsPerSecond;
+        const fadeOutPx = clip.fadeOut * this.pixelsPerSecond;
+
 
         const block = document.createElement("div");
         block.dataset.clipId = clip.id;
@@ -227,12 +230,12 @@ export class Timeline {
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = 52;
-            canvas.style.cssText = "none; width: 100%; height: 100%;";
+            canvas.style.cssText = "display: block; width: 100%; height: 100%;";
             this._drawWaveform(canvas, clip.audioData);
             block.appendChild(canvas);
         }
 
-        const fadeOverlay = document.createElement("http://www.w3.org/2000/svg", "svg");
+        const fadeOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         fadeOverlay.setAttribute("width", width);
         fadeOverlay.setAttribute("height", 52);
         fadeOverlay.style.cssText = `
@@ -244,9 +247,6 @@ export class Timeline {
         pointer-events: none;
         `;
 
-        const fadeInPx = clip.fadeIn * this.pixelsPerSecond;
-        const fadeOutPx = clip.fadeOut * this.pixelsPerSecond;
-
         const fadeInLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
         fadeInLine.setAttribute("x1", 0);
         fadeInLine.setAttribute("y1", 52);
@@ -257,11 +257,7 @@ export class Timeline {
         fadeInLine.setAttribute("stroke", "#C97A4A");
         fadeInLine.setAttribute("stroke-width", "2");
 
-        fadeOverlay.appendChild("fadeInLine");
-
-        
-        const fadeInPx = clip.fadeIn * this.pixelsPerSecond;
-        const fadeOutPx = clip.fadeOut * this.pixelsPerSecond;
+        fadeOverlay.appendChild(fadeInLine);
 
         const fadeOutLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
         fadeOutLine.setAttribute("x1", width - fadeOutPx);
@@ -273,11 +269,11 @@ export class Timeline {
         fadeOutLine.setAttribute("stroke", "#C97A4A");
         fadeOutLine.setAttribute("stroke-width", "2");
 
-        fadeOverlay.appendChild("fadeOutLine");
+        fadeOverlay.appendChild(fadeOutLine);
         block.appendChild(fadeOverlay);
 
         const fadeInHandle = document.createElement("div");
-        fadeInHandle.style.csstext = `
+        fadeInHandle.style.cssText = `
         position: absolute;
         left: 0;
         top: 0;
@@ -285,14 +281,16 @@ export class Timeline {
         height: 8px;
         background: #C97A4A;
         border-radius: 50%;
-        trasnform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
         pointer-events: none;
         `;
+        fadeInHandle.style.left = `${fadeInPx}px`;
+        fadeInHandle.style.top = "0px";
 
         block.appendChild(fadeInHandle);
 
         const fadeOutHandle = document.createElement("div");
-        fadeOutHandle.style.csstext = `
+        fadeOutHandle.style.cssText = `
         position: absolute;
         left: 0;
         top: 0;
@@ -300,9 +298,11 @@ export class Timeline {
         height: 8px;
         background: #C97A4A;
         border-radius: 50%;
-        trasnform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
         pointer-events: none;
         `;
+        fadeOutHandle.style.LEFT = `${width - fadeOutPx}px`;
+        fadeOutHandle.style.top = "0px";
 
         block.appendChild(fadeOutHandle);
 
