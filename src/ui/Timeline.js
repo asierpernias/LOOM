@@ -84,7 +84,7 @@ export class Timeline {
         position: absolute;
         top: 0;
         bottom: 0;
-        left: 80;
+        left: 95;
         width: ${totalWidth}px;
         pointer-events: none;
         z-index: 0;
