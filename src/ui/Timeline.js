@@ -411,7 +411,7 @@ export class Timeline {
             }
 
             if (changes.length > 0) {
-                historyManager,execute(
+                historyManager.execute(
                     new MoveMultipleClipsCommand(changes)
                 );
             } else {
