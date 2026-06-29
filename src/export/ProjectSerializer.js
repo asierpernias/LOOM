@@ -35,6 +35,8 @@ export async function saveProject(filename = "proyecto.zip") {
                 trimEnd: clip.trimEnd ?? 0,
                 notes: clip.notes ?? 0,
                 audioFile,
+                fadeIn: clip.fadeIn ?? 0,
+                fadeOut: clip.fadeOut ?? 0,
             });
         }
 
@@ -85,7 +87,7 @@ export async function loadProject(file) {
             if (clipData.audioFile) {
                 const wavEntry = zip.file(clipData.audioFile);
                 if (wavEntry) {
-                    const arrayBuffer = await wavEntry.async("arrabuffer");
+                    const arrayBuffer = await wavEntry.async("arraybuffer");
                     audioData = await Tone.context.rawContext.decodeAudioData(arrayBuffer);
                 }
             }
@@ -97,6 +99,8 @@ export async function loadProject(file) {
                 trimEnd: clipData.trimEnd ?? 0,
                 notes: clipData.notes ?? [],
                 audioData,
+                fadeIn: clipData.fadeIn ?? 0,
+                fadeOut: clipData.fadeOut ?? 0,
             });
 
             if (hasNotes) {

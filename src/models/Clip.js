@@ -7,7 +7,15 @@ export class Clip {
      * @param {Array} opts.notes
      */
    
-    constructor({audioData = null, startTime = 0, duration = 0, notes = [], trimStart = 0, trimEnd = 0,} = {}) {
+    constructor({audioData = null,
+            startTime = 0,
+            duration = 0,
+            notes = [],
+            trimStart = 0,
+            trimEnd = 0,
+            fadeIn = 0,
+            fadeOut = 0,
+        } = {}) {
         this.id = crypto.randomUUID();
         this.audioData = audioData;
         this.startTime = startTime;
@@ -15,6 +23,8 @@ export class Clip {
         this.notes = notes;
         this.trimStart = trimStart;
         this.trimEnd = trimEnd;
+        this.fadeIn = fadeIn;
+        this.fadeOut = fadeOut;
     }
 
     get endTime() {
