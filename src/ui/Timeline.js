@@ -232,6 +232,81 @@ export class Timeline {
             block.appendChild(canvas);
         }
 
+        const fadeOverlay = document.createElement("http://www.w3.org/2000/svg", "svg");
+        fadeOverlay.setAttribute("width", width);
+        fadeOverlay.setAttribute("height", 52);
+        fadeOverlay.style.cssText = `
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        `;
+
+        const fadeInPx = clip.fadeIn * this.pixelsPerSecond;
+        const fadeOutPx = clip.fadeOut * this.pixelsPerSecond;
+
+        const fadeInLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        fadeInLine.setAttribute("x1", 0);
+        fadeInLine.setAttribute("y1", 52);
+
+        fadeInLine.setAttribute("x2", fadeInPx);
+        fadeInLine.setAttribute("y2", 0);
+
+        fadeInLine.setAttribute("stroke", "#C97A4A");
+        fadeInLine.setAttribute("stroke-width", "2");
+
+        fadeOverlay.appendChild("fadeInLine");
+
+        
+        const fadeInPx = clip.fadeIn * this.pixelsPerSecond;
+        const fadeOutPx = clip.fadeOut * this.pixelsPerSecond;
+
+        const fadeOutLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        fadeOutLine.setAttribute("x1", width - fadeOutPx);
+        fadeOutLine.setAttribute("y1", 0);
+
+        fadeOutLine.setAttribute("x2", width);
+        fadeOutLine.setAttribute("y2", 52);
+
+        fadeOutLine.setAttribute("stroke", "#C97A4A");
+        fadeOutLine.setAttribute("stroke-width", "2");
+
+        fadeOverlay.appendChild("fadeOutLine");
+        block.appendChild(fadeOverlay);
+
+        const fadeInHandle = document.createElement("div");
+        fadeInHandle.style.csstext = `
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 8px;
+        height: 8px;
+        background: #C97A4A;
+        border-radius: 50%;
+        trasnform: translate(-50%, -50%);
+        pointer-events: none;
+        `;
+
+        block.appendChild(fadeInHandle);
+
+        const fadeOutHandle = document.createElement("div");
+        fadeOutHandle.style.csstext = `
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 8px;
+        height: 8px;
+        background: #C97A4A;
+        border-radius: 50%;
+        trasnform: translate(-50%, -50%);
+        pointer-events: none;
+        `;
+
+        block.appendChild(fadeOutHandle);
+
+
         const leftHandle = document.createElement("div");
         leftHandle.style.cssText = `
         position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
