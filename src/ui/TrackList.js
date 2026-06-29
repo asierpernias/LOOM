@@ -58,6 +58,37 @@ export class TrackList {
         const name = document.createElement("span");
         name.textContent = track.name;
         name.style.cssText = "flex:1; overflow:hidden; text-overflow:ellipsis;";
+        name.addEventListener("click", e => {
+            e.stopPropagation();
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = track.name;
+            input.style.cssText = "flex: 1; font-family: monospace; font-size: 0.85rem; background: #222; color: white; border: 1px solid #555; padding: 2px 4px;";
+
+            const commitRename = () => {
+                const newName = input.value.trim();
+                if (newName && newName !== track.name) {
+                    track.name = newName;
+                }
+                trackManager._notify();
+            };
+
+            input.addEventListener("blur", commitRename, {once: true});
+            input.addEventListener("keydown", ev => {
+                if (ev.key === "Enter") {
+                    input.blur();
+                } else if (ev.key === "Escape") {
+                    input.value = track.name;
+                    input.blur();
+                }
+            });
+
+            name.replaceWith(input);
+            input.focus();
+            input.select();
+        });
+        
         row.appendChild(name);
 
         const armBtn = document.createElement("button");
