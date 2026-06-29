@@ -157,3 +157,23 @@ export class DuplicateClipCommand {
         trackManager._notify();
     }
 }
+
+export class MoveMultipleClipsCommand {
+    constructor(items) {
+        this.items = items;
+    }
+
+    execute() {
+        for (const item of this.items) {
+            item.clip.moveTo(item.to);
+        }
+        trackManager._notify();
+    }
+
+    undo() {
+        for (const item of this.items) {
+            item.clip.moveTo(item.from);
+        }
+        trackManager._notify();
+    }
+}

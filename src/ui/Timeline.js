@@ -8,7 +8,7 @@ import { saveProject, loadProject } from "../export/ProjectSerializer.js";
 import { importAudioFile } from "../export/ImportAudio.js";
 import { importMidiFile } from "../export/ImportMidi.js";
 import { historyManager } from "../core/HistoryManager.js";
-import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand } from "../core/commands/Commands.js";
+import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand, MoveMultipleClipsCommand } from "../core/commands/Commands.js";
 import { projectSettings } from "../core/ProjectSettings.js";
 
 export class Timeline {
@@ -394,8 +394,29 @@ export class Timeline {
             dragging = false;
             block.style.cursor = "grab";
 
-            this.render();
-            
+            const changes = [];
+
+            for (const item of before) {
+                if (item.clip.startTime !== item.startTime) {
+                    changes.push({
+                        clip: item.clip,
+                        from: item.startTime,
+                        to: item.clip.startTime
+                    });
+                }
+            }
+
+            for (const item of changes) {
+                item.clip.moveTo(item.from);
+            }
+
+            if (changes.length > 0) {
+                historyManager,execute(
+                    new MoveMultipleClipsCommand(changes)
+                );
+            } else {
+                this.render();
+            }
         });
     }
 
