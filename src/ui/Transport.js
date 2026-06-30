@@ -55,7 +55,7 @@ export class Transport {
         const timeDisplay = document.createElement("div");
         timeDisplay.style.cssText = `
         color: white;
-        font-faily: monospace;
+        font-family: monospace;
         font-size: 0.9rem;
         padding: 0 8px;
         min-width: 70px;
@@ -76,7 +76,7 @@ export class Transport {
                 const mins = Math.floor(t/60).toString().padStart(2, "0");
                 const secs = Math.floor(t % 60).toString().padStart(2, "0");
                 const dec = Math.floor((t % 1) * 10);
-                this._timeDisplay.textContenr = `${mins}:${secs}.${dec}`;
+                this._timeDisplay.textContent = `${mins}:${secs}.${dec}`;
             }
             requestAnimationFrame(update);
         };
@@ -110,7 +110,7 @@ export class Transport {
 
         const player = new Tone.Player(clip.audioData)
             .connect(destination);
-        player.volume.value = Tone.gainToDb(track.volume); 
+        player.volume.value = Tone.gainToDb(track.volume * (clip.volume ?? 1)); 
         player.sync().start(clip.startTime, clip.trimStart ?? 0);
         player.offset = clip.trimStart ?? 0;
         this._scheduledPlayers.push(player);

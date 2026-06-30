@@ -40,6 +40,7 @@ export async function saveProject(filename = "proyecto.zip") {
                     audioFile,
                     fadeIn: clip.fadeIn ?? 0,
                     fadeOut: clip.fadeOut ?? 0,
+                    volume: clip.volume ?? 1,
                 });
             }
 
@@ -110,6 +111,7 @@ export async function loadProject(file) {
                 audioData,
                 fadeIn: clipData.fadeIn ?? 0,
                 fadeOut: clipData.fadeOut ?? 0,
+                volume: clipData.volume ?? 1,
             });
 
             if (hasNotes) {

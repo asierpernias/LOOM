@@ -194,3 +194,13 @@ export class DeleteMultipleClipsCommand {
         trackManager._notify();
     }
 }
+
+export class ClipVolumeCommand {
+    constructor(clip, from, to) {
+        this.clip = clip;
+        this.from = from;
+        this.to  = to;
+    }
+    execute() { this.clip.volume = this.to; trackManager._notify(); }
+    undo() { this.clip.volume = this.from; trackManager._notify(); }
+}

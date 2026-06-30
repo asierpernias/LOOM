@@ -8,7 +8,7 @@ import { saveProject, loadProject } from "../export/ProjectSerializer.js";
 import { importAudioFile } from "../export/ImportAudio.js";
 import { importMidiFile } from "../export/ImportMidi.js";
 import { historyManager } from "../core/HistoryManager.js";
-import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand, MoveMultipleClipsCommand, DeleteMultipleClipsCommand } from "../core/commands/Commands.js";
+import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand, MoveMultipleClipsCommand, DeleteMultipleClipsCommand, ClipVolumeCommand } from "../core/commands/Commands.js";
 import { projectSettings } from "../core/ProjectSettings.js";
 import { start } from "tone";
 import * as Tone from "tone";
@@ -102,7 +102,7 @@ export class Timeline {
         position: absolute;
         top: 0;
         bottom: 0;
-        left: 95;
+        left: 95px;
         width: ${totalWidth}px;
         pointer-events: none;
         z-index: 0;
@@ -155,8 +155,8 @@ export class Timeline {
             rect.style.cssText = `
             position: fixed;
             border: 1px solid #C97A4A;
-            bacjground: rgba(201,122,74,0.1);
-            pointer-events: noner;
+            background: rgba(201,122,74,0.1);
+            pointer-events: none;
             z-index:999;
             `;
             document.body.appendChild(rect);
@@ -187,12 +187,12 @@ export class Timeline {
                 dosument.querySelectorALl("[data-clip-id]").forEach(el => {
                     const elRect = el.getBoundingClientRect();
                     const intersects =
-                        elRect.left < selfRect.right &&
+                        elRect.left < selRect.right &&
                         elRect.right > selRect.left &&
                         elRect.top < selRect.bottom &&
                         elRect.bottom > selRect.top;
                     if (intersects) {
-                        this.selectedClips.add(el.dataset.cliId);
+                        this.selectedClips.add(el.dataset.clipId);
                     }
                 });
 
@@ -232,7 +232,7 @@ export class Timeline {
             if (clickX < 0) return;
             const newTime = clickX / this.pixelsPerSecond;
             Tone.Transport.seconds = newTime;
-            if (!historyManager.transport?.isPlaying) {
+            if (!this.transport?.isPlaying) {
                 this.transport._pausePosition = newTime;
             }
         });
@@ -439,7 +439,7 @@ export class Timeline {
     _attachDragMove(block, clip, track) {
         let dragging = false;
         let startMouseX = 0;
-        const before = [];
+        let before = [];
 
         block.addEventListener("mousedown", e => {
             if (e.target !== block && e.target.tagName !== "CANVAS") return;
@@ -487,7 +487,7 @@ export class Timeline {
             const leader = before[0];
             if (!leader) return;
 
-            const movingIds = before.mao(item => item.cli.id);
+            const movingIds = before.map(item => item.clip.id);
             const proposedStart = Math.max(0, leader.startTime + deltaTime);
             const snappedStart = projectSettings.snapToGrid(proposedStart);
 
@@ -754,6 +754,47 @@ export class Timeline {
                 menu.remove();
             });
             menu.appendChild(duplicateOption);
+
+            const volLabel = document.createElement("div");
+            volLabel.style.cssText = "padding: 6px 14px 2px 14px; color: rgba(255,255,255,0.5); font-size: 0.75rem;";
+            volLabel.textContent = "Columen clip";
+            menu.appendChild(volLabel);
+
+            const volWrapper = document.createElement("div");
+            volWrapper.style.cssText = "padding: 2px 14px 8px 14px; display: flex; align-items: center; gap: 8px;";
+
+            const volSlider = document.createElement("input");
+            volSlider.type = "range";
+            volSlider.min = "0";
+            volSlider.max = "1";
+            volSlider.step = "0.01";
+            volSlider.value = clip.volume ?? 1;
+            volSlider.style.cssText = "flex: 1;";
+
+            const volValue = document.createElement("span");
+            volValue.style.cssText = "color: white; font-size: 0.8rem; min-width: 30px; text-align: right;";
+            volValue.textContent = Math.round((clip.volume ?? 1) * 100) + "%";
+
+            let volBefore = clip.volume ?? 1;
+
+            volSlider.addEventListener("input", () => {
+                clip.volume = parseFloat(volSlider.value);
+                volValue.textContent = Math.round(clip.volume * 100) + "%";
+            });
+
+            volSlider.addEventListener("change", () => {
+                const finalVol = clip.volume;
+                clip.volume = volBefore;
+                if (finalVol !== volBefore) {
+                    historyManager.execute(new ClipVolumeCommand(clip, volBefore, finalVol));
+                }
+                volBefore = finalVol;
+            });
+
+            volWrapper.appendChild(volSlider);
+            volWrapper.appendChild(volValue);
+            menu.appendChild(volWrapper);
+
 
             document.body.appendChild(menu);
 
