@@ -16,6 +16,7 @@ export class Clip {
             fadeIn = 0,
             fadeOut = 0,
             volume = 1,
+            name = "Clip",
         } = {}) {
         this.id = crypto.randomUUID();
         this.audioData = audioData;
@@ -124,6 +125,7 @@ export class Clip {
             fadeOut: this.fadeOut,
             notes: this.notes.map(n => ({...n})),
             volume: this.volume,
+            name: this.name,
         });
     }
 }

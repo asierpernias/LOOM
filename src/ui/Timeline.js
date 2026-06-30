@@ -432,10 +432,10 @@ export class Timeline {
         this._attachContextMenu(block, clip, track);
         
         const nameLabel = document.createElement("div");
-        nameLabel.textContent = track.name;
+        nameLabel.textContent = clip.name ?? "Clip";
         nameLabel.style.cssText = `
         position: absolute;
-        bottom: 2px;
+        bottom: 3px;
         left: 6px;
         font-family: monospace;
         font-size: 0.65rem;
@@ -443,9 +443,9 @@ export class Timeline {
         pointer-events: none;
         white-space: nowrap;
         overflow: hidden;
-        text-overflow: hidden;
         text-overflow: ellipsis;
         max-width: calc(100% - 12px);
+        text-align: right;
         `;
         block.appendChild(nameLabel);
 
@@ -787,6 +787,18 @@ export class Timeline {
                 menu.remove();
             });
             menu.appendChild(duplicateOption);
+
+            const renameOption = this._menuItem("Renombrar clip", () => {
+                const newName = prompt("Nombre del clip:", clip.name ?? "Clip");
+
+                if (newName !== null) {
+                    clip.name = newName.trim() || "Clip";
+                    trackManager._notify();
+                }
+                menu.remove();
+            });
+
+            menu.appendChild(renameOption);
 
             const volLabel = document.createElement("div");
             volLabel.style.cssText = "padding: 6px 14px 2px 14px; color: rgba(255, 255, 255, 0.5); font-size: 0.75rem;";
