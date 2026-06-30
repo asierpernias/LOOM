@@ -42,6 +42,7 @@ export async function saveProject(filename = "proyecto.zip") {
                     fadeOut: clip.fadeOut ?? 0,
                     volume: clip.volume ?? 1,
                     name: clip.name,
+                    locked: clip.locked,
                 });
             }
 
@@ -114,6 +115,7 @@ export async function loadProject(file) {
                 fadeOut: clipData.fadeOut ?? 0,
                 volume: clipData.volume ?? 1,
                 name: clipData.name ?? "Clip",
+                locked: clipData.locked ?? false,
             });
 
             if (hasNotes) {

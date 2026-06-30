@@ -449,6 +449,29 @@ export class Timeline {
         `;
         block.appendChild(nameLabel);
 
+        const lockBtn = document.createElement("div");
+        lockBtn.textContent = clip.locked ? "🔒" : "🔓";
+
+        lockBtn.style.cssText = `
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        z-index:30;
+        `;
+
+        lockBtn.addEventListener("click", e => {
+            e.stopPropagation();
+
+            clip.locked = !clip.locked;
+            lockBtn.textContent = clip.locked ? "🔒" : "🔓";
+            trackManager._notify();
+        });
+
+        block.appendChild(lockBtn);
+        this._attachContextMenu(block, clip, track);
+
         return block;
     }
 
@@ -799,6 +822,8 @@ export class Timeline {
             });
 
             menu.appendChild(renameOption);
+
+
 
             const volLabel = document.createElement("div");
             volLabel.style.cssText = "padding: 6px 14px 2px 14px; color: rgba(255, 255, 255, 0.5); font-size: 0.75rem;";

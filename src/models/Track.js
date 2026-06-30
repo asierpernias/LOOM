@@ -10,7 +10,6 @@ export class Track {
         this.muted = false;
         this.solo = false;
         this.color = this._randomColor();
-        this.locked = false;
     }
 
     _randomColor() {
