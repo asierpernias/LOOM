@@ -9,6 +9,12 @@ export class Track {
         this.volume = 1;
         this.muted = false;
         this.solo = false;
+        this.color = this._randomColor();
+    }
+
+    _randomColor() {
+        const colors = ["#7A8B6F", "#6F7A8B", "#8B7A6F", "#6F8B7A", "#7A6F8B"];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     addClip(clipOptions) {

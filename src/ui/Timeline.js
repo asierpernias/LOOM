@@ -11,6 +11,7 @@ import { historyManager } from "../core/HistoryManager.js";
 import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand, MoveMultipleClipsCommand, DeleteMultipleClipsCommand } from "../core/commands/Commands.js";
 import { projectSettings } from "../core/ProjectSettings.js";
 import { start } from "tone";
+import * as Tone from "tone";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -224,6 +225,17 @@ export class Timeline {
         left: 80px;
         `;
         lanesWrapper.appendChild(this._cursorEl);
+        lanesWrapper.addEventListener("click", e => {
+            if (e.target !== lanesWrapper) return;
+            const rect = lanesWrapper.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - 80;
+            if (clickX < 0) return;
+            const newTime = clickX / this.pixelsPerSecond;
+            Tone.Transport.seconds = newTime;
+            if (!historyManager.transport?.isPlaying) {
+                this.transport._pausePosition = newTime;
+            }
+        });
         this.container.appendChild(lanesWrapper);
 
     }
@@ -292,7 +304,7 @@ export class Timeline {
         width: ${width}px;
         height: 52px;
         background: #222;
-        border: 1px solid ${this.selectedClips.has(clip.id) ? "#C97A4A" : "#555"};
+        border: 1px solid ${this.selectedClips.has(clip.id) ? "#C97A4A" : track.color};
         border-radius: 3px;
         overflow: hidden;
         opacity: ${isMuted ? "0.35" : "1"}

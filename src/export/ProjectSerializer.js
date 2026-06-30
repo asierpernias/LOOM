@@ -49,6 +49,7 @@ export async function saveProject(filename = "proyecto.zip") {
                 volume: track.volume,
                 muted: track.muted,
                 solo: track.solo,
+                color: track.color,
                 clips: clipsData,
             });
         }
@@ -86,6 +87,7 @@ export async function loadProject(file) {
         track.volume = tracksData.volume ?? 1;
         track.muted = tracksData.muted ?? false;
         track.solo = tracksData.solo ?? false;
+        track.color = tracksData.color ?? track.color;
 
         for (const clipData of tracksData.clips) {
             const hasNotes = clipData.notes && clipData.notes.length > 0;

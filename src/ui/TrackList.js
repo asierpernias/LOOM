@@ -88,8 +88,35 @@ export class TrackList {
             input.focus();
             input.select();
         });
-        
+
         row.appendChild(name);
+
+        const colorDot = document.createElement("div");
+        colorDot.style.cssText = `
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: ${track.color};
+        cursor:pointer;
+        flex-shrink: 0;
+        `;
+        colorDot.addEventListener("click", e => {
+            e.stopPropagation();
+            const picker = document.createElement("input");
+            picker.type = "color";
+            picker.value = track.color;
+            picker.style.display = "none";
+            document.body.appendChild(picker);
+            picker.click();
+            picker.addEventListener("input", () => {
+                track.color = picker.value;
+                trackManager._notify();
+            });
+            picker.addEventListener("change", () => {
+                picker.remove();
+            });
+        });
+        row.appendChild(colorDot);
 
         const armBtn = document.createElement("button");
         armBtn.textContent = "ARM";
