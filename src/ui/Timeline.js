@@ -19,6 +19,8 @@ export class Timeline {
         this.pixelsPerSecond = pixelsPerSecond;
         this.transport = null;
         this.selectedClips = new Set();
+        this._cursorVisible = false;
+        this._cursorTime = 0;
 
         this.container.style.cssText = `
         flex-direction: column;
@@ -46,7 +48,7 @@ export class Timeline {
                 e.preventDefault();
                 historyManager.redo();
             }
-            if (e.key === "Delete" || e.key === "BAckspace") {
+            if (e.key === "Delete" || e.key === "Backspace") {
                 if (this.selectedClips.size === 0) return;
                 const items = [];
                 for (const t of trackManager.getAllTracks()) {
@@ -89,6 +91,8 @@ export class Timeline {
         if (!this.transport || !this._cursorEl) return;
         if (!this.transport.isPlaying) return;
         const time = this.transport.getCurrentTime();
+        this._cursorTime = time;
+        this._cursorVisible = true;
         this._cursorEl.style.left = `${90 + time * this.pixelsPerSecond}px`;
         this._cursorEl.style.display = this.transport.isPlaying ? "block" : "none";
     }
@@ -145,7 +149,7 @@ export class Timeline {
         `
 
         lanesWrapper.addEventListener("mousedown", e => {
-            if (e.target !== lanesWrapper) return;
+            if (e.target.closest("[data-clip-id]")) return;
             e.preventDefault();
 
             const startX = e.clientX;
@@ -178,13 +182,15 @@ export class Timeline {
                 rect.remove();
 
                 if (selRect.width < 4 && selRect.height < 4) {
-                    this.selectedClips.clear();
-                    this.render();
+                    pendingClearTimeout = setTimeout(() => {
+                        this.selectedClips.clear();
+                        this.render();
+                    }, 200);
                     return;
                 }
 
                 this.selectedClips.clear();
-                dosument.querySelectorALl("[data-clip-id]").forEach(el => {
+                document.querySelectorAll("[data-clip-id]").forEach(el => {
                     const elRect = el.getBoundingClientRect();
                     const intersects =
                         elRect.left < selRect.right &&
@@ -220,13 +226,17 @@ export class Timeline {
         bottom: 0;
         width: 2px;
         background: #C97A4A;
-        display: none;
+        display: ${this._cursorVisible ? "block" : "none"};
         pointer-events: none;
-        left: 80px;
+        left: ${90 + this._cursorTime * this.pixelsPerSecond}px;
         `;
         lanesWrapper.appendChild(this._cursorEl);
-        lanesWrapper.addEventListener("click", e => {
-            if (e.target !== lanesWrapper) return;
+
+        let pendingClearTimeout = null;
+
+        lanesWrapper.addEventListener("dblclick", e => {
+            if (e.target.closest("[data-clip-id]")) return;
+            if (pendingClearTimeout) clearTimeout(pendingClearTimeout);
             const rect = lanesWrapper.getBoundingClientRect();
             const clickX = e.clientX - rect.left - 80;
             if (clickX < 0) return;
@@ -234,6 +244,12 @@ export class Timeline {
             Tone.Transport.seconds = newTime;
             if (!this.transport?.isPlaying) {
                 this.transport._pausePosition = newTime;
+            }
+            this._cursorVisible = true;
+            this._cursorTime = newTime;
+            if (this._cursorEl) {
+                this._cursorEl.style.left = `${90 + newTime * this.pixelsPerSecond}px`;
+                this._cursorEl.style.display = "block";
             }
         });
         this.container.appendChild(lanesWrapper);
@@ -748,6 +764,23 @@ export class Timeline {
                 menu.remove();
             });
             menu.appendChild(deleteOption);
+
+            if (this.selectedClips.size > 1) {
+                const deleteSelectionOtion = this._menuItem("Eliminar selección", () =>{
+                    const items = [];
+                    for (const t of trackManager.getAllTracks()) {
+                        for (const c of t.getClipsSorted()) {
+                            if (this.selectedClips.has(c.id)) {
+                                items.push({track: t, clip: c});
+                            }
+                        }
+                    }
+                    this.selectedClips.clear();
+                    historyManager.execute(new DeleteMultipleClipsCommand(items));
+                    menu.remove();
+                });
+                menu.appendChild(deleteSelectionOtion);
+            }
 
             const duplicateOption = this._menuItem("Duplicar clip", () => {
                 historyManager.execute(new DuplicateClipCommand(track, clip));

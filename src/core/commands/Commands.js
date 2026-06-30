@@ -38,8 +38,7 @@ export class SplitClipCommand {
     }
 
     execute() {
-        this.track.removeClip(this.leftClip.id);
-        this.track.removeClip(this.rightClip.id);
+        this.track.removeClip(this.originalClip.id);
         this.track.addClip(this.leftClip);
         this.track.addClip(this.rightClip);
         trackManager._notify();
