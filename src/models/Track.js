@@ -23,7 +23,7 @@ export class Track {
         const others = this.clips
             .filter(c =>
                 c.id !== excludeClipId &&
-                !movingClipsIds.includes(c.id))
+                !excludeIds.includes(c.id))
             .slice()
             .sort((a, b) => a.startTime - b.startTime);
 

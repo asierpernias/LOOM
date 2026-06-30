@@ -143,8 +143,7 @@ export class DuplicateClipCommand {
     constructor(track, originalClip) {
         this.track = track;
         this.clip = originalClip.clone();
-
-        this.clip.startTime = originalClip.startTime + originalClip.duration;
+        this.clip.startTime = originalClip.startTime;
     }
 
     execute() {
@@ -153,7 +152,7 @@ export class DuplicateClipCommand {
     }
 
     undo() {
-        this.track.removeCLip(this.clip.id);
+        this.track.removeClip(this.clip.id);
         trackManager._notify();
     }
 }

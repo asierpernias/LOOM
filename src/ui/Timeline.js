@@ -338,26 +338,6 @@ export class Timeline {
         let startMouseX = 0;
         const before = [];
 
-        for (const t of trackManager.getAllTracks()) {
-            for (const c of t.getClipsSorted()) {
-                if (this.selectedClips.has(c.id)) {
-                    before.push({
-                        clip: c,
-                        track: t,
-                        startTime: c.startTime
-                    });
-                }
-            }
-        }
-        if (before.length === 0) {
-            before.push({
-                clip,
-                track,
-                startTime: clip.startTime
-            });
-        }
-        
-
         block.addEventListener("mousedown", e => {
             if (e.target !== block && e.target.tagName !== "CANVAS") return;
             
@@ -369,13 +349,32 @@ export class Timeline {
                 }
                 this._refreshSelectionStyles();
             }
+            
+            before = [];
+            
+            for (const t of trackManager.getAllTracks()) {
+                for (const c of t.getClipsSorted()) {
+                    if (this.selectedClips.has(c.id)) {
+                        before.push({
+                            clip: c,
+                            track: t,
+                            startTime: c.startTime
+                        });
+                    }
+                }
+            }
+            if (before.length === 0) {
+                before.push({
+                    clip,
+                    track,
+                    startTime: clip.startTime
+                });
+            }
             dragging = true;
             startMouseX = e.clientX;
             block.style.cursor = "grabbing";
             e.stopPropagation();
         });
-
-        const movingIds = before.map(item => item.clip.id);
 
         window.addEventListener("mousemove", e => {
             if (!dragging) return;
@@ -383,7 +382,9 @@ export class Timeline {
             const deltaTime = deltaPx / this.pixelsPerSecond;
 
             const leader = before[0];
+            if (!leader) return;
 
+            const movingIds = before.mao(item => item.cli.id);
             const proposedStart = Math.max(0, leader.startTime + deltaTime);
             const snappedStart = projectSettings.snapToGrid(proposedStart);
 
