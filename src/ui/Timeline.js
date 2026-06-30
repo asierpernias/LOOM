@@ -756,8 +756,8 @@ export class Timeline {
             menu.appendChild(duplicateOption);
 
             const volLabel = document.createElement("div");
-            volLabel.style.cssText = "padding: 6px 14px 2px 14px; color: rgba(255,255,255,0.5); font-size: 0.75rem;";
-            volLabel.textContent = "Columen clip";
+            volLabel.style.cssText = "padding: 6px 14px 2px 14px; color: rgba(255, 255, 255, 0.5); font-size: 0.75rem;";
+            volLabel.textContent = "Volumen clip";
             menu.appendChild(volLabel);
 
             const volWrapper = document.createElement("div");
@@ -797,6 +797,33 @@ export class Timeline {
 
 
             document.body.appendChild(menu);
+
+            requestAnimationFrame(() => {
+                const padding = 10;
+
+                const menuRect = menu.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
+
+                let left = e.clientX;
+                let top = e.clientY;
+
+                if (left + menuRect.width + padding > viewportWidth) {
+                    left = viewportWidth - menuRect.width - padding;
+                }
+
+                if (top + menuRect.height + padding > viewportHeight) {
+                    top = e.clientY - menuRect.height;
+                }
+
+                if(top < padding) {
+                    top = padding;
+                }
+
+                menu.style.left = `${left}px`;
+                menu.style.top = `${top}px`;
+
+            });
 
             const getSelectedClips = () => {
                 const fromSelection = trackManager.getAllTracks()
