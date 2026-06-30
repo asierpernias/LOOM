@@ -12,6 +12,7 @@ export class Transport {
         this._pausePosition = 0;
 
         this.render();
+        this._starTimeLoop();
     }
 
     onChange(callback) {
@@ -51,7 +52,35 @@ export class Transport {
         });
         this.container.appendChild(loopBtn);
         
+        const timeDisplay = document.createElement("div");
+        timeDisplay.style.cssText = `
+        color: white;
+        font-faily: monospace;
+        font-size: 0.9rem;
+        padding: 0 8px;
+        min-width: 70px;
+        display: flex;
+        align-items: center;
+        `;
+        timeDisplay.textContent = "00:00.0";
+        this.container.appendChild(timeDisplay);
+        this._timeDisplay = timeDisplay;
+
         this._playBtnRef = playBtn;
+    }
+
+    _starTimeLoop() {
+        const update = () => {
+            if (this._timeDisplay) {
+                const t = Tone.Transport.seconds;
+                const mins = Math.floor(t/60).toString().padStart(2, "0");
+                const secs = Math.floor(t % 60).toString().padStart(2, "0");
+                const dec = Math.floor((t % 1) * 10);
+                this._timeDisplay.textContenr = `${mins}:${secs}.${dec}`;
+            }
+            requestAnimationFrame(update);
+        };
+        update();
     }
 
     _buttonStyle(bg) {

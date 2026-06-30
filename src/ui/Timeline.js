@@ -280,6 +280,8 @@ export class Timeline {
         const fadeInPx = clip.fadeIn * this.pixelsPerSecond;
         const fadeOutPx = clip.fadeOut * this.pixelsPerSecond;
 
+        const isMuted = !trackManager.isTrackAudible(track.id);
+
 
         const block = document.createElement("div");
         block.dataset.clipId = clip.id;
@@ -293,6 +295,7 @@ export class Timeline {
         border: 1px solid ${this.selectedClips.has(clip.id) ? "#C97A4A" : "#555"};
         border-radius: 3px;
         overflow: hidden;
+        opacity: ${isMuted ? "0.35" : "1"}
         `;
 
         if (clip.audioData) {
@@ -399,6 +402,25 @@ export class Timeline {
         this._attachDragFade(fadeOutHandle, clip, "out");
 
         this._attachContextMenu(block, clip, track);
+        
+        const nameLabel = document.createElement("div");
+        nameLabel.textContent = track.name;
+        nameLabel.style.cssText = `
+        position: absolute;
+        bottom: 2px;
+        left: 6px;
+        font-family: monospace;
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.5);
+        pointer-events: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100% - 12px);
+        `;
+        block.appendChild(nameLabel);
+
         return block;
     }
 
