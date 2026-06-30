@@ -284,6 +284,16 @@ export class Timeline {
         padding: 0 8px;
         display: flex;
         align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        background: ${track.color}22;
+        border-left: 4px solid ${track.color};
+        box-shadow:
+            inset 0 0 12px ${track.color}22,
+            0 0 10px ${track.color}33;
+        text-shadow:
+            0 0 6px ${track.color};
+        transition: all .15s ease;
         `;
         row.appendChild(label)
 
@@ -310,6 +320,15 @@ export class Timeline {
 
         const isMuted = !trackManager.isTrackAudible(track.id);
 
+        const colorBar = document.createElement("div");
+        colorBar.style.cssText = `
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom:0;
+        width:5px;
+        background: ${track.color};
+        `;
 
         const block = document.createElement("div");
         block.dataset.clipId = clip.id;
@@ -319,19 +338,21 @@ export class Timeline {
         left: ${left}px;
         width: ${width}px;
         height: 52px;
-        background: #222;
+        background: ${track.color}20;
         border: 1px solid ${this.selectedClips.has(clip.id) ? "#C97A4A" : track.color};
         border-radius: 3px;
         overflow: hidden;
         opacity: ${isMuted ? "0.35" : "1"}
         `;
 
+        block.appendChild(colorBar);
+
         if (clip.audioData) {
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = 52;
             canvas.style.cssText = "display: block; width: 100%; height: 100%;";
-            this._drawWaveform(canvas, clip.audioData);
+            this._drawWaveform(canvas, clip.audioData, track.color);
             block.appendChild(canvas);
         }
 
@@ -439,7 +460,8 @@ export class Timeline {
         left: 6px;
         font-family: monospace;
         font-size: 0.65rem;
-        color: rgba(255,255,255,0.5);
+        color:white;
+        text-shadow: 0 0 4px  ${track.color};
         pointer-events: none;
         white-space: nowrap;
         overflow: hidden;
@@ -476,6 +498,7 @@ export class Timeline {
     }
 
     _attachDragMove(block, clip, track) {
+        if (clip.locked) return;
         let dragging = false;
         let startMouseX = 0;
         let before = [];
@@ -574,6 +597,7 @@ export class Timeline {
     
 
     _attachDragTrim(handle, clip, side) {
+        if (clip.locked) return;
         let dragging = false;
         let startMouseX = 0;
         let startDuration = 0;
@@ -666,6 +690,7 @@ export class Timeline {
 
     
     _attachDragFade(handle, clip, side) {
+        if (clip.locked) return;
 
         let startMouseX;
         let startFade;
@@ -710,7 +735,7 @@ export class Timeline {
         });
     }
 
-    _drawWaveform(canvas, audioBuffer) {
+    _drawWaveform(canvas, audioBuffer, color) {
         const ctx = canvas.getContext("2d");
         const data = audioBuffer.getChannelData(0);
         const width = canvas.width;
@@ -721,7 +746,7 @@ export class Timeline {
         ctx.fillStyle = "#222";
         ctx.fillRect (0, 0, width, height);
 
-        ctx.strokeStyle = "#7A8B6F";
+        ctx.strokeStyle = color;
         ctx.lineWidth = 1;
         ctx.beginPath();
 
@@ -742,6 +767,9 @@ export class Timeline {
     }
 
     _attachContextMenu(block, clip, track) {
+
+        const locked = clip.locked;
+
         block.addEventListener("contextmenu", e => {
             e.preventDefault();
             e.stopPropagation();
@@ -763,6 +791,9 @@ export class Timeline {
             min-width: 160px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             `;
+
+
+            if (clip.locked) return;
 
             const splitOption = this._menuItem("Cortar", async () => {
                 const clipsArea = block.parentElement;
@@ -826,7 +857,7 @@ export class Timeline {
 
 
             const volLabel = document.createElement("div");
-            volLabel.style.cssText = "padding: 6px 14px 2px 14px; color: rgba(255, 255, 255, 0.5); font-size: 0.75rem;";
+            volLabel.style.cssText = "padding: 6px 14px 2px 14px; background: track.color; font-size: 0.75rem; opacity: .35";
             volLabel.textContent = "Volumen clip";
             menu.appendChild(volLabel);
 
