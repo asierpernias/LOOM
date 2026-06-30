@@ -19,9 +19,11 @@ export class Track {
         return clip;
     }
 
-    _findFreeSlot(duration, desiredStart, excludeClipId = null) {
+    _findFreeSlot(duration, desiredStart, excludeClipId = null, movingClipsIds = []) {
         const others = this.clips
-            .filter(c => c.id !== excludeClipId)
+            .filter(c =>
+                c.id !== excludeClipId &&
+                !movingClipsIds.includes(c.id))
             .slice()
             .sort((a, b) => a.startTime - b.startTime);
 

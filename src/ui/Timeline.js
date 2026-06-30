@@ -375,16 +375,24 @@ export class Timeline {
             e.stopPropagation();
         });
 
+        const movingIds = before.map(item => item.clip.id);
+
         window.addEventListener("mousemove", e => {
             if (!dragging) return;
             const deltaPx = e.clientX - startMouseX;
             const deltaTime = deltaPx / this.pixelsPerSecond;
 
+            const leader = before[0];
+
+            const proposedStart = Math.max(0, leader.startTime + deltaTime);
+            const snappedStart = projectSettings.snapToGrid(proposedStart);
+
+            const leaderFinal = leader.track._findFreeSlot(leader.clip.duration, snappedStart, leader.clip.id, movingIds);
+
+            const delta = leaderFinal - leader.startTime;
+
             for (const item of before) {
-                const proposedStart = Math.max(0, item.startTime + deltaTime);
-                const snappedStart = projectSettings.snapToGrid(proposedStart);
-                const finalStart = item.track._findFreeSlot(item.clip.duration, snappedStart, item.clip.id);
-                item.clip.moveTo(finalStart);
+                item.clip.moveTo(Math.max(0, item.startTime + delta));
             }
             this.render();
         });
