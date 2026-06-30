@@ -176,3 +176,21 @@ export class MoveMultipleClipsCommand {
         trackManager._notify();
     }
 }
+
+export class DeleteMultipleClipsCommand {
+    constructor(items) {
+        this.items = items;
+    }
+    execute() {
+        for (const { track, clip } of this.items) {
+            track.removeClip(clip.id);
+        }
+        trackManager._notify();
+    }
+    undo() {
+        for (const {track, clip} of this.items) {
+            track.addClip(clip);
+        }
+        trackManager._notify();
+    }
+}

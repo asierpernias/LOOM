@@ -8,8 +8,9 @@ import { saveProject, loadProject } from "../export/ProjectSerializer.js";
 import { importAudioFile } from "../export/ImportAudio.js";
 import { importMidiFile } from "../export/ImportMidi.js";
 import { historyManager } from "../core/HistoryManager.js";
-import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand, MoveMultipleClipsCommand } from "../core/commands/Commands.js";
+import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, FadeClipCommand, DuplicateClipCommand, MoveMultipleClipsCommand, DeleteMultipleClipsCommand } from "../core/commands/Commands.js";
 import { projectSettings } from "../core/ProjectSettings.js";
+import { start } from "tone";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -43,7 +44,23 @@ export class Timeline {
             } else if (e.key === "y" || e.key === "Y") {
                 e.preventDefault();
                 historyManager.redo();
-            }});
+            }
+            if (e.key === "Delete" || e.key === "BAckspace") {
+                if (this.selectedClips.size === 0) return;
+                const items = [];
+                for (const t of trackManager.getAllTracks()) {
+                    for (const c of t.getClipsSorted()) {
+                        if(this.selectedClips.has(c.id)) {
+                            items.push({track: t, clip: c});
+                        }
+                    }
+                }
+                if (items.length > 0) {
+                    this.selectedClips.clear();
+                    historyManager.execute(new DeleteMultipleClipsCommand(items));
+                }
+            }
+        });
         this.container.addEventListener("wheel", e => {
             if (!(e.ctrlKey  || e.metaKey)) return;
             e.preventDefault();
@@ -127,10 +144,62 @@ export class Timeline {
         `
 
         lanesWrapper.addEventListener("mousedown", e => {
-            if (e.target === lanesWrapper) {
+            if (e.target !== lanesWrapper) return;
+            e.preventDefault();
+
+            const startX = e.clientX;
+            const startY = e.clientY;
+
+            const rect = document.createElement("div");
+            rect.style.cssText = `
+            position: fixed;
+            border: 1px solid #C97A4A;
+            bacjground: rgba(201,122,74,0.1);
+            pointer-events: noner;
+            z-index:999;
+            `;
+            document.body.appendChild(rect);
+
+            const onMove = (e) => {
+                const x = Math.min(e.clientX, startX);
+                const y = Math.min(e.clientY, startY);
+                const w = Math.abs(e.clientX - startX);
+                const h = Math.abs(e.clientY - startY);
+                rect.style.left = `${x}px`;
+                rect.style.top = `${y}px`;
+                rect.style.width = `${w}px`;
+                rect.style.height = `${h}px`;
+            };
+
+            const onUp = () => {
+                window.removeEventListener("mousemove", onMove);
+                const selRect = rect.getBoundingClientRect();
+                rect.remove();
+
+                if (selRect.width < 4 && selRect.height < 4) {
+                    this.selectedClips.clear();
+                    this.render();
+                    return;
+                }
+
                 this.selectedClips.clear();
-                this.render();
-            }
+                dosument.querySelectorALl("[data-clip-id]").forEach(el => {
+                    const elRect = el.getBoundingClientRect();
+                    const intersects =
+                        elRect.left < selfRect.right &&
+                        elRect.right > selRect.left &&
+                        elRect.top < selRect.bottom &&
+                        elRect.bottom > selRect.top;
+                    if (intersects) {
+                        this.selectedClips.add(el.dataset.cliId);
+                    }
+                });
+
+                this._refreshSelectionStyles();
+            };
+
+            window.addEventListener("mousemove", onMove);
+            window.addEventListener("mouseup", onUp, {once: true});
         });
 
         const AllClips = trackManager.getAllTracks().flatMap(t => t.getClipsSorted());
