@@ -1,9 +1,31 @@
-export class WindowManager  {
+export class WindowManager extends EventTarget  {
     constructor(root) {
+        super();
         this.root = root;
         this.windows = [];
+        this._windowsById = new Map();
         this._zIndex = 10;
-    }   
+    }  
+    
+    hasWindow(id) {
+        return id != null && this._windowsById.has(id);
+    }
+
+    getWindow(id) {
+        return this._windowsById.get(id) ?? null;
+    }
+
+    focusWindow(id) {
+        const win = this._windowsById.get(id);
+        if (!win) return false;
+        win.style.zIndex = this._zIndex++;
+        if (typeof win._restore === "function") win._restore();
+        return true;
+    }
+
+    restoreWindow(id) {
+        return this.focusWindow(id);
+    }
 
     createWindow({
         id,
@@ -16,7 +38,13 @@ export class WindowManager  {
         minWidth = 200,
         minHeight = 140
     }) {
+        if (id != null && this._windowsById.has(id)) {
+            this.focusWindow(id);
+            return this._windowsById.get(id);
+        }
+
         const win = document.createElement("div");
+        win._id = id ?? null;
 
         win.style.cssText = `
         position: absolute;
@@ -89,7 +117,7 @@ export class WindowManager  {
             });
             Btn.addEventListener("mouseleave", () => {
                 Btn.style.background = "#141414";
-                Btn.style.borderCOlor = "#3d3d3d";
+                Btn.style.borderColor = "#3d3d3d";
             });
 
             return Btn;
@@ -119,11 +147,13 @@ export class WindowManager  {
                 win.style.height = "32px";
                 win.style.resize = "none";
                 minimizeBtn.textContent = "+";
+                minimized = true;
             } else {
                 body.style.display = "block";
                 win.style.height = previousHeight ?? "300px";
                 win.style.resize = "both";
                 minimizeBtn.textContent = "_";
+                minimized = false;
             }
         };
 
@@ -131,6 +161,10 @@ export class WindowManager  {
             e.stopPropagation();
             toggleMinimaze();
         });
+
+        win._restore = () => {
+            if (minimized) toggleMinimaze();
+        }
 
         bar.addEventListener("dblclick", e => {
             e.stopPropagation();
@@ -142,7 +176,7 @@ export class WindowManager  {
             this.closeWindow(win);
         });
 
-        bar.append(titleEl, closeBtn, fitBtn, minimizeBtn, closeBtn)
+        bar.append(titleEl, fitBtn, minimizeBtn, closeBtn)
 
         const body = document.createElement("div");
         body.style.cssText = `
@@ -178,6 +212,9 @@ export class WindowManager  {
         this._makeDraggable(win, bar);
         this.root.appendChild(win);
         this.windows.push(win);
+        if (id != null) {
+            this._windowsById.set(id, win);
+        }
 
         requestAnimationFrame(() => {
             const base = this._mesureContent(component, width, height);
@@ -213,7 +250,14 @@ export class WindowManager  {
             }
 
             this.windows = this.windows.filter(w => w != win);
+            if (win._id != null) {
+                this._windowsById.delete(win._id);
+            }
             win.remove();
+
+            this.dispatchEvent(new CustomEvent("close", {
+                detail: {id: win._id}
+            }));
         }
 
         _mesureContent(component, fallbackWidth, fallBackHeight) {

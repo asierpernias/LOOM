@@ -120,7 +120,7 @@ export class HUD{
         addWrapper.appendChild(menu);
 
         this.el.appendChild(title);
-        root.appendChild(addWrapper);
+        this.el.appendChild(addWrapper);
 
         this._menuEl = menu;
         root.appendChild(this.el);

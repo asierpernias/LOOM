@@ -9,7 +9,6 @@ import { InstrumentFactory } from "./instrumental/Instruments.js";
 import "./styles/themes.css";
 import { Workspace } from "./workspace/Workspace.js";
 import { WindowManager } from "./ui/windows/WindowManager.js";
-import { CameraPanel } from "./ui/layout/CameraPanel.js";
 import { createView } from "./ui/views/ViewFactory.js";
 import { HUD } from "./ui/hud/HUD.js";
 import { TrackList } from "./ui/TrackList.js";
@@ -33,31 +32,7 @@ if (trackManager.getAllTracks().length === 0) {
 const trackList = new TrackList(trackContainer, transport);
 timelineView.timeline.setTransport(transport);
 
-const hud = new HUD(app, (type) => {
-    windows.createWindow(createView(type));
-});
-
 app.appendChild(workspace.el);
-windows.createWindow({
-    id: "timeline",
-    title: timelineView.title,
-    component: timelineView.component
-});
-windows.createWindow({
-    id: "camera",
-    title: cameraView.title,
-    component: cameraView.component
-});
-windows.createWindow({
-    id: "transport",
-    title: "Transport / FX",
-    component: transportContainer
-});
-windows.createWindow({
-    id: "tracks",
-    title: "Tracks",
-    component: trackContainer
-});
 
 const thereminControls = document.createElement("div");
 
@@ -116,11 +91,6 @@ thereminControls.innerHTML = `
 
 `;
 
-windows.createWindow({
-    id: "thereminControls",
-    title: "Theremin Controls",
-    component: thereminControls
-});
 
 thereminControls.querySelector("#reverbSlider").addEventListener("input", e => {
     audioEngine.setReverb(parseFloat(e.target.value));
@@ -157,6 +127,34 @@ thereminControls.querySelector("#recButton").addEventListener("click", async e =
     timelineView.timeline.render();
 });
 
+function openOrFocusWindow(id) {
+    if (windows.hasWindow(id)) {
+        window.focusWindow(id);
+        return;
+    }
+
+    switch(id) {
+        case "timeline":
+            windows.createWindow({id: "timeline", title: timelineView.title, component: timelineView.component});
+            break;
+        case "timeline":
+            windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component});
+            break;
+        case "timeline":
+            windows.createWindow({id: "transport", title: "Transport / FX", component: transportContainer});
+            break;
+        case "timeline":
+            windows.createWindow({id: "tracks", title: "Tracks", component: trackContainer});
+            break;
+        case "timeline":
+            windows.createWindow({id: "thereminControls", title: "Theremin Controls", component: thereminControls});
+            break;
+        default:
+            console.warn(`[HUD] tipo de vista desconocido: ${id}`);
+    }
+}
+["timeline", "camera", "transport", "tracks", "thereminControls"].forEach(openOrFocusWindow)
+const hud = new HUD(app, (type) => openOrFocusWindow(type)); 
 
 const handRenderer = cameraView.handRenderer
 
