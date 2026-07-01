@@ -1,0 +1,22 @@
+:root {
+    --bg: #0a0a0a;
+    --panel: #111;
+    --accent: #C97A4A;
+}
+
+[data-theme="light"] {
+    --bg: #f2f2f2;
+    --panel: #ffffff;
+    --accent:#C97A4A;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    overflow: hidden;
+}

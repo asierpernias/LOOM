@@ -13,6 +13,7 @@ import { Transport } from "./ui/Transport.js";
 import { Sequencer } from "./ui/Sequencer.js";
 import { SequencerEngine } from "./core/SequencerEngine.js";
 import { sequencerEngine } from "./core/SequencerEngine.js";
+import "./styles/themes.css";
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
