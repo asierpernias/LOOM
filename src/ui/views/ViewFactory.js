@@ -10,7 +10,7 @@ export function createView(type, deps = {}) {
 
     if (type === "timeline") {
         const t = new Timeline(wrapper);
-        return { title: "Timeline", component: wrapper};
+        return { title: "Timeline", component: wrapper, timeline: t};
     }
     if (type === "sequencer") {
         const s = new Sequencer(wrapper);
@@ -25,10 +25,6 @@ export function createView(type, deps = {}) {
 
         if (gm) {
             gm.mount(c.container);
-
-            gm.start().then(({width, height}) => {
-                handRenderer.resize(width, height);
-            });
         }
         
         return { title: "Camera", component: wrapper, handRenderer};

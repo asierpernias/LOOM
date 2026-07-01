@@ -43,7 +43,7 @@ export class TrackList {
     _renderTrackRow(track) {
         const row = document.createElement("div");
         row.style.cssText = `
-        ;
+        display: flex;
         align-items: center;
         gap: 6px;
         padding: 6px;

@@ -12,7 +12,8 @@ import { WindowManager } from "./ui/windows/WindowManager.js";
 import { CameraPanel } from "./ui/layout/CameraPanel.js";
 import { createView } from "./ui/views/ViewFactory.js";
 import { HUD } from "./ui/hud/HUD.js";
-import { start } from "tone";
+import { TrackList } from "./ui/TrackList.js";
+import { Transport } from "./ui/Transport.js";
 
 const app = document.querySelector("#app");
 const workspace = new Workspace(app);
@@ -21,6 +22,16 @@ const gestureManager = new GestureManager();
 const cameraPanel = new CameraPanel();
 const cameraView = createView("camera", { gestureManager });
 const timelineView = createView("timeline");
+const transportContainer = document.createElement("div");
+const transport = new Transport(transportContainer);
+const trackContainer = document.createElement("div");
+
+if (trackManager.getAllTracks().length === 0) {
+    trackManager.createTrack({name: "Pista 1", instrument: "synth"});
+}
+
+const trackList = new TrackList(trackContainer, transport);
+timelineView.timeline.setTransport(transport);
 
 const hud = new HUD(app, (type) => {
     windows.createWindow(createView(type));
@@ -37,6 +48,115 @@ windows.createWindow({
     title: cameraView.title,
     component: cameraView.component
 });
+windows.createWindow({
+    id: "transport",
+    title: "Transport / FX",
+    component: transportContainer
+});
+windows.createWindow({
+    id: "tracks",
+    title: "Tracks",
+    component: trackContainer
+});
+
+const thereminControls = document.createElement("div");
+
+thereminControls.style.cssText = `
+    width: 100%
+    height: 100%
+    box-sizing: border-box;
+    background: #111;
+    color: white;
+    font-family: monospace;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+`;
+
+thereminControls.innerHTML = `
+    <h2 style="margin:0; font-size:1rem; letter-spacing:2px;">THEREMIN</h2>
+
+    <div id="instrumentDisplay" style="
+        border: 1px solid #555;
+        padding: 10px;
+        font-size: 0.95rem;
+        min-height: 20px;
+    ">---</div>
+
+    <label style="display:flex; flex-direction:column; gap:6px;">
+        REVERB
+        <input type="range" id="reverbSlider" min="0" max="1" step="0.01" value="0">
+    </label>
+
+    <label style="display:flex; flex-direction:column; gap:6px;">
+        DELAY TIME
+        <input type="range" id="delaySlider" min="0" max="1" step="0.01" value="0">
+    </label>
+
+    <label style="display:flex; flex-direction:column; gap:6px;">
+        DELAY FEEDBACK
+        <input type="range" id="feedbackSlider" min="0" max="0.9" step="0.01" value="0">
+    </label>
+
+    <label style="display:flex; flex-direction:column; gap:6px;">
+        OCTAVE
+        <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
+    </label>
+
+    <button id="recButton" style="
+        background: #ff4444;
+        color: white;
+        border: none;
+        font-family: monospace;
+        cursor: pointer;
+        padding: 10px;
+    ">REC</button>
+
+`;
+
+windows.createWindow({
+    id: "thereminControls",
+    title: "Theremin Controls",
+    component: thereminControls
+});
+
+thereminControls.querySelector("#reverbSlider").addEventListener("input", e => {
+    audioEngine.setReverb(parseFloat(e.target.value));
+});
+thereminControls.querySelector("#delaySlider").addEventListener("input", e => {
+    audioEngine.setDelayTime(parseFloat(e.target.value));
+});
+thereminControls.querySelector("#feedbackSlider").addEventListener("input", e => {
+    audioEngine.setDelayFeedback(parseFloat(e.target.value));
+});
+thereminControls.querySelector("#OctaveSlider").addEventListener("input", e => {
+    const multiplier = Math.pow(2, parseInt(e.target.value, 10) - 1);
+    window.octaveMultiplier = multiplier;
+});
+let isRecording = false;
+
+thereminControls.querySelector("#recButton").addEventListener("click", async e => {
+    const Btn = e.currentTarget;
+
+    if(!isRecording) {
+        recorderEngine.start();
+        isRecording = true;
+        Btn.textContent = "STOP";
+        Btn.style.background = "#444";
+        return;
+    }
+
+    const clip = recorderEngine.stop();
+    isRecording = false;
+    Btn.textContent = "REC";
+    Btn.style.background = "#ff4444";
+
+    await recorderEngine.renderClip(clip, InstrumentFactory);
+    timelineView.timeline.render();
+});
+
 
 const handRenderer = cameraView.handRenderer
 
@@ -63,7 +183,6 @@ app.style.cssText = `
     overflow: hidden;
 `;
 
-let isRecording = false;
 
 async function startApp() {
     const {width, height} = await gestureManager.start();
@@ -152,6 +271,13 @@ async function startApp() {
                 audioEngine.silenceLive();
 
             }   
+        }
+
+        const display = document.getElementById("instrumentDisplay");
+        if (display) {
+            display.textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
+        } else {
+            display.textContent = "---";
         }
 
 

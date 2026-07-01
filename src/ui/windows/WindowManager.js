@@ -4,15 +4,15 @@ export class WindowManager  {
         this.windows = [];
     }   
 
-    createWindow({id, title, component}) {
+    createWindow({id, title, component, x = 100, y = 100, width = 500, height = 300}) {
         const win = document.createElement("div");
 
         win.style.cssText = `
         position: absolute;
-        top: 100px;
-        left: 100px;
-        width: 500px;
-        height: 300px;
+        top: ${y}px;
+        left: ${x}px;
+        width: ${width}px;
+        height: ${height}px;
         background: #111;
         border: 1px solid #333;
         display: flex;

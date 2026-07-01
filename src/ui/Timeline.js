@@ -147,7 +147,9 @@ export class Timeline {
         const lanesWrapper = document.createElement("div");
         lanesWrapper.style.cssText = `
         position: relative;
-        `
+        flex: 1;
+        min-height: 0;
+        `;
 
         lanesWrapper.addEventListener("mousedown", e => {
             if (e.target.closest("[data-clip-id]")) return;
