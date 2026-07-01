@@ -102,7 +102,7 @@ thereminControls.innerHTML = `
 
     <label style="display:flex; flex-direction:column; gap:6px;">
         OCTAVE
-        <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
+        <input type="range" id="OctaveSlider" min="1" max="4" step="1" value="1">
     </label>
 
     <button id="recButton" style="

@@ -38,8 +38,8 @@ export class WindowManager  {
 
         const bar = document.createElement("div");
         bar.style.cssText = `
-        height: 28px;
-        background: #222;
+        height: 32px;
+        background: linear-gradient(180deg, #262626, #1b1b1b);
         cursor: grab;
         display: flex;
         align-items: center;
@@ -48,38 +48,101 @@ export class WindowManager  {
         color: white;
         user-select: none;
         box-sizing: border-box;
+        border-bottom: 1px solid #333;
+        gap: 6px;
         `;
 
         const titleEl = document.createElement("div");
         titleEl.textContent = title;
         titleEl.style.cssText = `
         flex: 1;
-        overflow: hidden:
+        overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        color: #ddd;
         `;
 
-        const closeBtn = document.createElement("button");
-        closeBtn.textContent = "X";
-        closeBtn.style.cssText = `
-        width: 22px;
-        height: 22px;
-        border: 1px solid #444;
-        background: #181818;
-        color: white;
-        cursor: pointer;
-        font-family: monospace;
-        line-height: 18px;
-        padding: 0;
-        `;
+        const makeTopButton = (label, title) => {
+            const Btn = document.createElement("button");
+            Btn.textContent = label;
+            Btn.title = title;
+            Btn.style.cssText = `
+            width: 24px;
+            height: 22px;
+            border: 1px solid #3d3d3d;
+            border-radius: 4px;
+            background: #181818;
+            color: #ddd;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.75rem;
+            line-height: 18px;
+            padding: 0;
+            `;
 
-        closeBtn.addEventListener("mousedown", e => e.stopPropagation());
+            Btn.addEventListener("mousedown", e => e.stopPropagation());
+            Btn.addEventListener("mouseenter", () => {
+                Btn.style.background = "#252525";
+                Btn.style.borderColor = "#666";
+            });
+            Btn.addEventListener("mouseleave", () => {
+                Btn.style.background = "#141414";
+                Btn.style.borderCOlor = "#3d3d3d";
+            });
+
+            return Btn;
+        };
+
+        const fitBtn = makeTopButton("□", "Ajustar al contenido");
+        const minimizeBtn = makeTopButton("_", "Minimizar");
+        const closeBtn = makeTopButton("X", "Cerrar");
+
+        fitBtn.addEventListener("click", e => {
+            e.stopPropagation();
+
+            const baseWidth = win._baseContentWidth ?? 500;
+            const baseHeight = win._baseContentHeight ?? 300;
+
+            win.style.width = `${baseWidth}px`;
+            win.style.height = `${baseHeight + 32}px`;
+        });
+
+        let minimized = false;
+        let previousHeight = null;
+
+        const toggleMinimaze = () => {
+            if (minimized) {
+                previousHeight = win.style.height;
+                body.style.display = "none";
+                win.style.height = "32px";
+                win.style.resize = "none";
+                minimizeBtn.textContent = "+";
+            } else {
+                body.style.display = "block";
+                win.style.height = previousHeight ?? "300px";
+                win.style.resize = "both";
+                minimizeBtn.textContent = "_";
+            }
+        };
+
+        minimizeBtn.addEventListener("click", e => {
+            e.stopPropagation();
+            toggleMinimaze();
+        });
+
+        bar.addEventListener("dblclick", e => {
+            e.stopPropagation();
+            toggleMinimaze();
+        });
+
         closeBtn.addEventListener("click", e => {
             e.stopPropagation();
             this.closeWindow(win);
         });
 
-        bar.appendChild(titleEl, closeBtn)
+        bar.append(titleEl, closeBtn, fitBtn, minimizeBtn, closeBtn)
 
         const body = document.createElement("div");
         body.style.cssText = `
