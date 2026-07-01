@@ -1,6 +1,6 @@
 export class HUD{
     constructor(root, onAddView) {
-        this.el.createElement("div");
+        this.el = document.createElement("div");
 
         this.el.style.cssText = `
         position: absolute;
@@ -21,7 +21,7 @@ export class HUD{
         const btn = document.createElement("button");
         btn.textContent = "+";
 
-        btn.onClick = () => {
+        btn.onclick = () => {
             const type = prompt("view: timeline / sequencer / camera");
             if (type) onAddView(type);
         };

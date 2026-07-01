@@ -1,13 +1,13 @@
 export class CameraPanel{
-    constructor() {
+    constructor(gestureManager) {
+        this.gestureManager = gestureManager
         this.container = document.createElement("div");
         this.container.style.cssText = `
-        display: none;
         width: 100%;
         height: 100%;
         display: flex;
         align-items: center;
-        justify-content-center;
+        justify-content: center;
         overflow: hidden;
         background: #090909;
         `;
@@ -20,8 +20,7 @@ export class CameraPanel{
         `;
         this.container.appendChild(this.canvas);
     }
-
     getCanvas() {
         return this.canvas;
-    }
+        }
 }

@@ -38,8 +38,13 @@ export class WindowManager  {
         flex: 1;
         overflow: hidden;
         `;
-
-        body.appendChild(component);
+        
+        if (component instanceof HTMLElement) {
+            body.appendChild(component);
+        } else {
+            console.warn("WindowManager: component invalido", component);
+        }
+        
 
         win.appendChild(bar);
         win.appendChild(body);
@@ -54,7 +59,7 @@ export class WindowManager  {
 
     _makeDraggable(win, bar) {
         let dragging = false;
-        let StartX, StartY, startLeft, startTop;
+        let startX, startY, startLeft, startTop;
 
         bar.addEventListener("mousedown", (e) => {
             dragging = true;

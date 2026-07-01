@@ -5,124 +5,40 @@ import { HandRenderer } from "./gesture/HandRenderer.js";
 import { GestureManager } from "./gesture/GestureManager.js";
 import {trackManager} from "./core/TrackManager.js";
 import {recorderEngine} from "./core/RecorderEngine.js";
-import * as Tone from "tone";
 import { InstrumentFactory } from "./instrumental/Instruments.js";
-import { TrackList } from "./ui/TrackList.js";
-import { Timeline } from "./ui/Timeline.js";
-import { Transport } from "./ui/Transport.js";
-import { Sequencer } from "./ui/Sequencer.js";
-import { SequencerEngine } from "./core/SequencerEngine.js";
-import { sequencerEngine } from "./core/SequencerEngine.js";
 import "./styles/themes.css";
-import { AppShell } from "./ui/layout/AppShell.js";
+import { Workspace } from "./workspace/Workspace.js";
+import { WindowManager } from "./ui/windows/WindowManager.js";
 import { CameraPanel } from "./ui/layout/CameraPanel.js";
+import { createView } from "./ui/views/ViewFactory.js";
+import { HUD } from "./ui/hud/HUD.js";
+import { start } from "tone";
 
 const app = document.querySelector("#app");
+const workspace = new Workspace(app);
+const windows = new WindowManager(workspace.el);
 const gestureManager = new GestureManager();
 const cameraPanel = new CameraPanel();
-const handRenderer = new HandRenderer(
-    cameraPanel.getCanvas()
-);
+const cameraView = createView("camera", { gestureManager });
+const timelineView = createView("timeline");
 
-const leftPanelContent = document.createElement("div");
-leftPanelContent.style.cssText = `
-display: flex;
-flex-direction: column;
-height: 100%;
-overflow: hidden;
-`;
-
-const timelineContainer = document.createElement("div");
-timelineContainer.style.cssText = "display: none; flex: 1; min-height: 0; overflow-y: auto;";
-
-const centerContent = document.createElement("div");
-centerContent.style.cssText = `
-display:flex;
-flex-direction: column;
-height: 100%;
-overflow: hidden;
-`;
-
-const sequencerContainer = document.createElement("div");
-sequencerContainer.style.cssText = "display: none; flex: 1; min-height: 0;";
-const sequencer = new Sequencer(sequencerContainer);
-
-centerContent.appendChild(timelineContainer);
-centerContent.appendChild(sequencerContainer);
-centerContent.appendChild(cameraPanel.container);
-
-const timeline = new Timeline(timelineContainer);
-
-const transportContainer = document.createElement("div");
-transportContainer.style.cssText = "background: #111 ; display: flex; align-items: center; gap: 8px;";
-
-const transport = new Transport(transportContainer);
-timeline.setTransport(transport);
-
-const shell = new AppShell(app);
-shell.registerPanel({
-    id: "sidebar",
-    title: "",
-    host: "sidebar",
-    width: 200,
-    component: leftPanelContent, 
+const hud = new HUD(app, (type) => {
+    windows.createWindow(createView(type));
 });
 
-
-shell.mountTimeline({container: centerContent});
-shell.mountTransport(transportContainer);
-
-shell.panelManager.setVisibility("sidebar", false);
-
-const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
-recorderEngine.arm(defaultTrack);
-
-let currentView = "timeline";
-
-const btnStyle = `
-    background: #333;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    font-family: monospace;
-    cursor: pointer;
-`;
-
-const timelineBtn = document.createElement("button");
-timelineBtn.textContent = "Timeline";
-timelineBtn.style.cssText = btnStyle;
-
-const sequencerBtn = document.createElement("button");
-sequencerBtn.textContent = "Sequencer";
-sequencerBtn.style.cssText = btnStyle;
-
-const cameraBtn = document.createElement("button");
-cameraBtn.textContent = "Camera";
-cameraBtn.style.cssText = btnStyle;
-
-
-function setView(view) {
-    currentView = view;
-
-    timelineContainer.style.display = view === "timeline" ? "block" : "none";
-    sequencerContainer.style.display = view === "sequencer" ? "block" : "none";
-    cameraPanel.container.style.display = view === "camera" ? "block" : "none";
-}
-transportContainer.appendChild(cameraBtn);
-transportContainer.appendChild(sequencerBtn);
-transportContainer.appendChild(timelineBtn);
-
-timelineBtn.addEventListener("click", () => {
-    setView("timeline")
+app.appendChild(workspace.el);
+windows.createWindow({
+    id: "timeline",
+    title: timelineView.title,
+    component: timelineView.component
+});
+windows.createWindow({
+    id: "camera",
+    title: cameraView.title,
+    component: cameraView.component
 });
 
-sequencerBtn.addEventListener("click", () => {
-    setView("sequencer")
-});
-
-cameraBtn.addEventListener("click", () => {
-    setView("camera")
-});
+const handRenderer = cameraView.handRenderer
 
 let fadeCounter = 0;
 
@@ -141,240 +57,104 @@ function getNote(x) {
     const clamped = Math.max(0, Math.min(NOTES.length - 1, index));
     return NOTES[clamped] * (window.octaveMultiplier ?? 1);
 }
-const welcome = document.createElement("div")
-welcome.style.cssText = `
-    position:fixed;
-    inset:0;
-    background: rgba(0,0,0,0.85);
-    color:white;
-    font-family:monospace;
-    display:flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    z-index:10;
-    `;
-
-welcome.innerHTML = `
-     <h1 style="font-size: 2rem; margin:0;">THEREMIN</h1>
-    <p style="text-align:center; line-height:1.6;">
-        1 finger - Theremin (sine) <br>
-        2 fingers - Synth (square) <br>
-        3 fingers - Bass (sawtooth) <br> </br>
-        Move your hand to control pitch and volume
-    </p>
-    <button style="
-    background: white;
-    color: black;
-    border: none;
-    padding: 12px 32px;
-    font-family: monospace;
-    font-size:1rem; 
-    cursor: pointer;
-    ">START</button>
-
-    
-    `;
-
-app.appendChild(welcome)
-
 app.style.cssText = `
     width: 100%;
     height: 100vh;
     overflow: hidden;
 `;
 
-
-const sidebar = document.createElement("div");
-sidebar.style.cssText = `
-    width: 100%;
-    background: #111;
-    color: white;
-    font-family: monospace;
-    padding: 20px;
-    display:flex;
-    flex-direction: column;
-    gap:24px;
-    overflow-y: auto;
-`;
-sidebar.innerHTML = `
-    <h2 style="margin:0; font-size:1rem; letter-spacing:2px;">OPTIONS</h2>
-    <div id="instrumentDisplay" style = "color: white; border: 1px solid #afafaf; padding: 10px; font-size: 1.1rem;">---</div>
-    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> REVERB
-        <input type="range" id="reverbSlider" min="0" max="1" step="0.01" value="0">
-    </label>
-    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> DELAY TIME
-        <input type="range" id="delaySlider" min="0" max="1" step="0.01" value="0">
-    </label>
-    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> DELAY FEEDBACK
-        <input type="range" id="feedbackSlider" min="0" max="0.9" step="0.01" value="0">
-    </label>
-    <label style="color:white; display:flex; flex-direction:column; gap:8px;"> OCTAVE
-        <input type="range" id="octaveSlider" min="1" max="4" step="1" value="1">
-    </label>
-   <div id="trackListContainer" style="display:flex; flex-direction: column; gap: 8px;"></div>
-   <button id="recButton" style="
-    background: #ff4444;
-    color:white;
-    border: none;
-    font-family: monospace;
-    cursor: pointer;
-    padding: 10px;
-    "> REC</button>
-`;
-leftPanelContent.appendChild(sidebar);
-const tracklist = new TrackList(document.getElementById("trackListContainer"), transport);
-
-
-welcome.querySelector("button").addEventListener("click", async () => {
-    await import("tone").then(t => t.start());
-    shell.panelManager.setVisibility("sidebar", true);
-    timelineContainer.style.display = "block";
-    welcome.remove();
-    requestAnimationFrame(() => startApp());
-});
-
-document.getElementById("reverbSlider").addEventListener("input", e => 
-    audioEngine.setReverb(parseFloat(e.target.value)));
-
-document.getElementById("delaySlider").addEventListener("input", e => 
-    audioEngine.setDelayTime(parseFloat(e.target.value)));
-
-document.getElementById("feedbackSlider").addEventListener("input", e => 
-    audioEngine.setDelayFeedback(parseFloat(e.target.value)));
-
-document.getElementById("octaveSlider").addEventListener("input", e => {
-    const multiplier = Math.pow(2, parseInt(e.target.value) - 1);
-    window.octaveMultiplier = multiplier;
-});
-
 let isRecording = false;
-
-document.getElementById("recButton").addEventListener("click", async e =>{
-    const btn = document.getElementById("recButton");
-    if (!isRecording) {
-        recorderEngine.start();
-        isRecording = true;
-        btn.textContent = "STOP";
-        btn.style.background = "#444";
-    } else {
-        const clip = recorderEngine.stop();
-        isRecording = false;
-        btn.textContent = "REC";
-        btn.style.background = "#ff4444";
-        
-        await recorderEngine.renderClip(clip, InstrumentFactory);
-       
-        timeline.render();
-    }
-});
-
-
-gestureManager.mount(leftPanelContent);
 
 async function startApp() {
     const {width, height} = await gestureManager.start();
-
-    const availableWidth = leftPanelContent.clientWidth - sidebar.offsetWidth;
-    const availableHeight = leftPanelContent.clientHeight;
     const aspectRatio = width / height;
-
-    let displayWidth = availableWidth
-    let displayHeight = displayWidth / aspectRatio
-    if ( displayHeight > availableHeight) {
-        displayHeight = availableHeight;
-        displayWidth = displayHeight * aspectRatio;
-    }
 
     handRenderer.resize(width, height);
     loop();
 }
 
-function loop() {
-    const video = gestureManager.getVideoElement();
-    const landmarks = gestureManager.getLandmarks();
+  function loop() {
+        const video = gestureManager.getVideoElement();
+        const landmarks = gestureManager.getLandmarks();
 
-    handRenderer.drawVideoFrame(video);
+        handRenderer.drawVideoFrame(video);
 
-    if (landmarks) {
-        fadeCounter = FADE_FRAMES;
+        if (landmarks) {
+            fadeCounter = FADE_FRAMES;
 
-        const color = ["#00ff88", "#ff6600", "#ff00ff"][currentFingers - 1] ?? "white";
+            const color = ["#00ff88", "#ff6600", "#ff00ff"][currentFingers - 1] ?? "white";
         
-        const fingers = GestureManager.countFingers(landmarks);
-        const instrumentName = ["piano", "synth", "bass"][fingers - 1] ?? "piano";
+            const fingers = GestureManager.countFingers(landmarks);
+            const instrumentName = ["piano", "synth", "bass"][fingers - 1] ?? "piano";
 
-        if (fingers !== currentFingers) {
-            if (fingers === pendingFingers) {
-                instrumentCounter++;
-                if (instrumentCounter >= INSTRUMENT_FRAMES) {
-                    if (lastSampler && lastNote) {
-                        releaseNote(lastSampler, lastNote);
-                    } 
-                    currentFingers = fingers;
+            if (fingers !== currentFingers) {
+                if (fingers === pendingFingers) {
+                    instrumentCounter++;
+                    if (instrumentCounter >= INSTRUMENT_FRAMES) {
+                        if (lastSampler && lastNote) {
+                            releaseNote(lastSampler, lastNote);
+                        } 
+                        currentFingers = fingers;
+                        instrumentCounter = 0;
+                    }
+                } else {
+                    pendingFingers = fingers;
                     instrumentCounter = 0;
                 }
-            } else {
-                pendingFingers = fingers;
+            }
+            else {
+                pendingFingers = null;
                 instrumentCounter = 0;
             }
-        }
-        else {
-            pendingFingers = null;
-            instrumentCounter = 0;
-        }
         
-        handRenderer.drawHand(landmarks, color);
+            handRenderer.drawHand(landmarks, color);
 
-        const wrist = landmarks[0];
-        const rawX = 1 - wrist.x;
-        const rawY = wrist.y;
+            const wrist = landmarks[0];
+            const rawX = 1 - wrist.x;
+            const rawY = wrist.y;
         
-        smoothX += (rawX - smoothX) * SMOOTH;
-        smoothY += (rawY - smoothY) * SMOOTH;
+            smoothX += (rawX - smoothX) * SMOOTH;
+            smoothY += (rawY - smoothY) * SMOOTH;
 
-        const freq = getNote(smoothX);
-        const vol = 1 - smoothY;
+            const freq = getNote(smoothX);
+            const vol = 1 - smoothY;
 
 
-        const noteName = freqToNote(freq);
-        document.getElementById("instrumentDisplay").textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
+            const noteName = freqToNote(freq);
+            const sampler = instrumentSamplers[fingers] ?? instrumentSamplers[1];
 
-        const sampler = instrumentSamplers[fingers] ?? instrumentSamplers[1];
+            audioEngine.setLiveVolume(vol);
 
-        audioEngine.setLiveVolume(vol);
-
-        if (noteName !== lastNote || sampler !== lastSampler) {
-            if (lastSampler && lastNote){
-                releaseNote(lastSampler, lastNote);
-               recorderEngine.noteOff(lastNote);
+            if (noteName !== lastNote || sampler !== lastSampler) {
+                if (lastSampler && lastNote){
+                    releaseNote(lastSampler, lastNote);
+                    recorderEngine.noteOff(lastNote);
+                }
+                sampler.triggerAttack(noteName);
+                lastNote = noteName;
+                lastSampler = sampler;
+                recorderEngine.noteOn(noteName, {
+                    velocity: vol,
+                    instrument: instrumentName
+                });
             }
-            sampler.triggerAttack(noteName);
-            lastNote = noteName;
-            lastSampler = sampler;
-            recorderEngine.noteOn(noteName, {
-                velocity: vol,
-                instrument: instrumentName
-            });
-        }
         
-        } else {
-        if (fadeCounter > 0) {
-            fadeCounter--;
-        } else {
-            if (lastSampler && lastNote) {
-                releaseNote(lastSampler, lastNote);
-                recorderEngine.noteOff(lastNote);
-                lastNote = null;
-                lastSampler = null;
-            }
-           audioEngine.silenceLive();
+            } else {
+            if (fadeCounter > 0) {
+                fadeCounter--;
+            } else {
+                if (lastSampler && lastNote) {
+                    releaseNote(lastSampler, lastNote);
+                    recorderEngine.noteOff(lastNote);
+                    lastNote = null;
+                    lastSampler = null;
+                }
+                audioEngine.silenceLive();
 
-            document.getElementById("instrumentDisplay").textContent = "---"
+            }   
         }
-    }
 
 
-requestAnimationFrame(loop);
-}
+        requestAnimationFrame(loop);
+        }
+startApp();

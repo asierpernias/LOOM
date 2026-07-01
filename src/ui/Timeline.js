@@ -33,7 +33,7 @@ export class Timeline {
         max-height: 100%;
         box-sizing: border-box;
         position:relative;
-        display: none;
+        display: flex;
         `;
 
         trackManager.onChange(() => this.render());
@@ -354,7 +354,6 @@ export class Timeline {
             canvas.height = 52;
             canvas.style.cssText = "display: block; width: 100%; height: 100%;";
             this._drawWaveform(canvas, clip.audioData, track.color);
-            block.appendChild(CameraPanel);
         }
 
         const fadeOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1007,7 +1006,7 @@ export class Timeline {
 
         const dropdown = document.createElement("div");
         dropdown.style.cssText = `
-        display: none;
+        display: flex;
         position: fixed;
         background: #1a1a1a;
         border: 1px solid #444;
