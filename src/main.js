@@ -49,6 +49,7 @@ const sequencer = new Sequencer(sequencerContainer);
 
 centerContent.appendChild(timelineContainer);
 centerContent.appendChild(sequencerContainer);
+centerContent.appendChild(cameraPanel.container);
 
 const timeline = new Timeline(timelineContainer);
 
@@ -67,14 +68,6 @@ shell.registerPanel({
     component: leftPanelContent, 
 });
 
-shell.registerPanel({
-    id: "camera",
-    title: "camera",
-    host: "camera",
-    component: cameraPanel.container, 
-});
-
-
 
 shell.mountTimeline({container: centerContent});
 shell.mountTransport(transportContainer);
@@ -84,11 +77,9 @@ shell.panelManager.setVisibility("sidebar", false);
 const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
 recorderEngine.arm(defaultTrack);
 
-let currentView = "main";
+let currentView = "timeline";
 
-const viewToggleBtn = document.createElement("button");
-viewToggleBtn.textContent = "TIMELINE/SEQUENCER";
-viewToggleBtn.style.cssText = `
+const btnStyle = `
     background: #333;
     color: white;
     border: none;
@@ -96,19 +87,41 @@ viewToggleBtn.style.cssText = `
     font-family: monospace;
     cursor: pointer;
 `;
-transportContainer.appendChild(viewToggleBtn);
 
-viewToggleBtn.addEventListener("click", () => {
-    if (currentView === "main") {
-        timelineContainer.style.display = "none";
-        sequencerContainer.style.display = "flex";
-        currentView = "sequencer";
-    } else {
-        sequencerEngine.stop();
-        sequencerContainer.style.display = "none";
-        timelineContainer.style.display = "block";
-        currentView = "main";
-    }
+const timelineBtn = document.createElement("button");
+timelineBtn.textContent = "Timeline";
+timelineBtn.style.cssText = btnStyle;
+
+const sequencerBtn = document.createElement("button");
+sequencerBtn.textContent = "Sequencer";
+sequencerBtn.style.cssText = btnStyle;
+
+const cameraBtn = document.createElement("button");
+cameraBtn.textContent = "Camera";
+cameraBtn.style.cssText = btnStyle;
+
+
+function setView(view) {
+    currentView = view;
+
+    timelineContainer.style.display = view === "timeline" ? "block" : "none";
+    sequencerContainer.style.display = view === "sequencer" ? "block" : "none";
+    cameraPanel.container.style.display = view === "camera" ? "block" : "none";
+}
+transportContainer.appendChild(cameraBtn);
+transportContainer.appendChild(sequencerBtn);
+transportContainer.appendChild(timelineBtn);
+
+timelineBtn.addEventListener("click", () => {
+    setView("timeline")
+});
+
+sequencerBtn.addEventListener("click", () => {
+    setView("sequencer")
+});
+
+cameraBtn.addEventListener("click", () => {
+    setView("camera")
 });
 
 let fadeCounter = 0;

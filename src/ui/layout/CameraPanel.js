@@ -2,6 +2,7 @@ export class CameraPanel{
     constructor() {
         this.container = document.createElement("div");
         this.container.style.cssText = `
+        display: none;
         width: 100%;
         height: 100%;
         display: flex;
