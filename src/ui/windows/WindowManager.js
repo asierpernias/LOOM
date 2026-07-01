@@ -140,6 +140,9 @@ export class WindowManager  {
 
             return win;
         })
+              
+        return win;
+    }
 
         closeWindow(win) {
             if (win._cleanup) {
@@ -181,38 +184,47 @@ export class WindowManager  {
         }
 
         _scaleContent(win, body, scaler) {
-            
+            const baseWidth = win._baseContentWidth ?? 500;
+            const baseHeight = win._baseContentHeight ?? 500;
+
+            const availableWidth = Math.max(1, body.clientWidth);
+            const availableHeight = Math.max(1, body.clientHeight);
+
+            const scale = Math.min(
+                availableWidth / baseWidth,
+                availableHeight / baseHeight
+            );
+
+            scaler.style.width = `${baseWidth}px`;
+            scaler.style.height  = `${baseHeight}px`;
+            scaler.style.transform = `scale(${scale})`;
         }
         
-        return win;
-    }
-
     _makeDraggable(win, bar) {
-        let dragging = false;
-        let startX, startY, startLeft, startTop;
-
         bar.addEventListener("mousedown", (e) => {
-            dragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
+            if (e.button !== 0) return;
+            let startLeft, startTop;
+            const startX = e.clientX;
+            const startY = e.clientY;
 
             const rect = win.getBoundingClientRect();
             startLeft = rect.left;
             startTop = rect.top;
 
             bar.style.cursor = "grabbing";
-        });
 
-        window.addEventListener("mousemove", (e) => {
-            if (!dragging) return;
+            const onMove = ev => {
+                win.style.left = `${startLeft + ev.clientX - startX}px`;
+                win.style.top = `${startTop + ev.clientY - startY}px`;
+            };
 
-            win.style.left = startLeft + (e.clientX - startX) + "px";
-             win.style.top = startTop + (e.clientY - startY) + "px";
-        });
-
-        window.addEventListener("mouseup", () => {
-            dragging = false;
-            bar.style.cursor = "grab";
+            const onUp = () => {
+                bar.style.cursor = "grab";
+                window.removeEventListener("mousemove", onMove);
+                window.removeEventListener("mouseup", onUp);
+            };
+            window.addEventListener("mousemove", onMove);
+            window.addEventListener("mouseup", onUp);
         });
     }
 }
