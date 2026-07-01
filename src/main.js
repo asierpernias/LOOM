@@ -15,12 +15,14 @@ import { SequencerEngine } from "./core/SequencerEngine.js";
 import { sequencerEngine } from "./core/SequencerEngine.js";
 import "./styles/themes.css";
 import { AppShell } from "./ui/layout/AppShell.js";
-
+import { CameraPanel } from "./ui/layout/CameraPanel.js";
 
 const app = document.querySelector("#app");
-const canvas = document.createElement("canvas");
 const gestureManager = new GestureManager();
-const handRenderer = new HandRenderer(canvas);
+const cameraPanel = new CameraPanel();
+const handRenderer = new HandRenderer(
+    cameraPanel.getCanvas()
+);
 
 const leftPanelContent = document.createElement("div");
 leftPanelContent.style.cssText = `
@@ -64,6 +66,15 @@ shell.registerPanel({
     width: 200,
     component: leftPanelContent, 
 });
+
+shell.registerPanel({
+    id: "camera",
+    title: "camera",
+    host: "camera",
+    component: cameraPanel.container, 
+});
+
+
 
 shell.mountTimeline({container: centerContent});
 shell.mountTransport(transportContainer);
@@ -161,11 +172,6 @@ app.style.cssText = `
     overflow: hidden;
 `;
 
-canvas.style.cssText = `
-    display:block;
-    flex-shrink: 0;
-    border: none;
-`;
 
 const sidebar = document.createElement("div");
 sidebar.style.cssText = `
@@ -204,7 +210,6 @@ sidebar.innerHTML = `
     padding: 10px;
     "> REC</button>
 `;
-leftPanelContent.appendChild(canvas);
 leftPanelContent.appendChild(sidebar);
 const tracklist = new TrackList(document.getElementById("trackListContainer"), transport);
 
@@ -268,8 +273,6 @@ async function startApp() {
         displayHeight = availableHeight;
         displayWidth = displayHeight * aspectRatio;
     }
-    canvas.style.width = `${displayWidth}px`;
-    canvas.style.height = `${displayHeight}px`;
 
     handRenderer.resize(width, height);
     loop();

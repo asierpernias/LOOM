@@ -12,6 +12,7 @@ import { MoveClipCommand, TrimClipCommand, SplitClipCommand, DeleteClipCommand, 
 import { projectSettings } from "../core/ProjectSettings.js";
 import { start } from "tone";
 import * as Tone from "tone";
+import { CameraPanel } from "./layout/CameraPanel.js";
 
 export class Timeline {
     constructor(container, {pixelsPerSecond = 40} = {}) {
@@ -353,7 +354,7 @@ export class Timeline {
             canvas.height = 52;
             canvas.style.cssText = "display: block; width: 100%; height: 100%;";
             this._drawWaveform(canvas, clip.audioData, track.color);
-            block.appendChild(canvas);
+            block.appendChild(CameraPanel);
         }
 
         const fadeOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");

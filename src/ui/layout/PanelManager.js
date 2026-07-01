@@ -9,7 +9,7 @@ export class PanelManager {
 
         this.container.style.cssText = `
         display: grid;
-        grid-template-columns: 280px 1fr 0px;
+        grid-template-columns: 280px 1fr 320px;
         grid-template-rows: 100%;
         height: 100vh;
         width: 100%;
