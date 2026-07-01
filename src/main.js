@@ -14,28 +14,61 @@ import { Sequencer } from "./ui/Sequencer.js";
 import { SequencerEngine } from "./core/SequencerEngine.js";
 import { sequencerEngine } from "./core/SequencerEngine.js";
 import "./styles/themes.css";
+import { AppShell } from "./ui/layout/AppShell.js";
+
 
 const app = document.querySelector("#app");
 const canvas = document.createElement("canvas");
 const gestureManager = new GestureManager();
 const handRenderer = new HandRenderer(canvas);
 
-const mainRow = document.createElement("div");
-mainRow.style.cssText = "display: flex; flex-shrink: 0; height: 520px;";
-app.appendChild(mainRow);
+const leftPanelContent = document.createElement("div");
+leftPanelContent.style.cssText = `
+display: flex;
+flex-direction: column;
+height: 100%;
+overflow: hidden;
+`;
 
 const timelineContainer = document.createElement("div");
 timelineContainer.style.cssText = "display: none; flex: 1; min-height: 0; overflow-y: auto;";
-app.appendChild(timelineContainer);
+
+const centerContent = document.createElement("div");
+centerContent.style.cssText = `
+display:flex;
+flex-direction: column;
+height: 100%;
+overflow: hidden;
+`;
+
+const sequencerContainer = document.createElement("div");
+sequencerContainer.style.cssText = "display: none; flex: 1; min-height: 0;";
+const sequencer = new Sequencer(sequencerContainer);
+
+centerContent.appendChild(timelineContainer);
+centerContent.appendChild(sequencerContainer);
 
 const timeline = new Timeline(timelineContainer);
 
 const transportContainer = document.createElement("div");
-transportContainer.style.cssText = "background: #111 ; display: none; align-items: center; gap: 8px;";
-app.appendChild(transportContainer);
+transportContainer.style.cssText = "background: #111 ; display: flex; align-items: center; gap: 8px;";
 
 const transport = new Transport(transportContainer);
 timeline.setTransport(transport);
+
+const shell = new AppShell(app);
+shell.registerPanel({
+    id: "left",
+    title: "",
+    position: "left",
+    width: 200,
+    component: leftPanelContent, 
+});
+
+shell.mountTimeline({container: centerContent});
+shell.mountTransport(transportContainer);
+
+shell.panelManager.setVisibility("left", false);
 
 const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
 recorderEngine.arm(defaultTrack);
@@ -53,14 +86,6 @@ viewToggleBtn.style.cssText = `
     cursor: pointer;
 `;
 transportContainer.appendChild(viewToggleBtn);
-
-const sequencerContainer = document.createElement("div");
-sequencerContainer.style.cssText = "display: none; flex: 1; min-height: 0;";
-app.appendChild(sequencerContainer);
-
-sequencerContainer.style.display = "none";
-
-const sequencer = new Sequencer(sequencerContainer);
 
 viewToggleBtn.addEventListener("click", () => {
     if (currentView === "main") {
@@ -131,9 +156,9 @@ welcome.innerHTML = `
 app.appendChild(welcome)
 
 app.style.cssText = `
-    display: flex;
+    width: 100%;
     height: 100vh;
-    flex-direction: column;
+    overflow: hidden;
 `;
 
 canvas.style.cssText = `
@@ -144,12 +169,12 @@ canvas.style.cssText = `
 
 const sidebar = document.createElement("div");
 sidebar.style.cssText = `
-    width: 280px;
+    width: 100%;
     background: #111;
     color: white;
     font-family: monospace;
     padding: 20px;
-    display:none;
+    display:flex;
     flex-direction: column;
     gap:24px;
     overflow-y: auto;
@@ -179,19 +204,17 @@ sidebar.innerHTML = `
     padding: 10px;
     "> REC</button>
 `;
-mainRow.appendChild(sidebar);
-sidebar.style.display = "none"
-
+leftPanelContent.appendChild(canvas);
+leftPanelContent.appendChild(sidebar);
 const tracklist = new TrackList(document.getElementById("trackListContainer"), transport);
 
 
 welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
-    sidebar.style.display = "flex"
-    transportContainer.style.display = "flex";
-    sequencerContainer.style.display = "flex";
+    shell.panelManager.setVisibility("left", true);
+    timelineContainer.style.display = "block";
     welcome.remove();
-    startApp();
+    requestAnimationFrame(() => startApp());
 });
 
 document.getElementById("reverbSlider").addEventListener("input", e => 
@@ -229,15 +252,14 @@ document.getElementById("recButton").addEventListener("click", async e =>{
     }
 });
 
-mainRow.appendChild(canvas);
 
-gestureManager.mount(app);
+gestureManager.mount(leftPanelContent);
 
 async function startApp() {
     const {width, height} = await gestureManager.start();
 
-    const availableWidth = mainRow.clientWidth - sidebar.offsetWidth;
-    const availableHeight = mainRow.clientHeight;
+    const availableWidth = leftPanelContent.clientWidth - sidebar.offsetWidth;
+    const availableHeight = leftPanelContent.clientHeight;
     const aspectRatio = width / height;
 
     let displayWidth = availableWidth
