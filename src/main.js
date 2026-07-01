@@ -245,6 +245,14 @@ async function startApp() {
             audioEngine.setLiveVolume(vol);
 
             if (noteName !== lastNote || sampler !== lastSampler) {
+                
+                const display = document.getElementById("instrumentDisplay");
+                if (display) {
+                    display.textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
+                } else {
+                    display.textContent = "---";
+                }
+
                 if (lastSampler && lastNote){
                     releaseNote(lastSampler, lastNote);
                     recorderEngine.noteOff(lastNote);
@@ -273,12 +281,6 @@ async function startApp() {
             }   
         }
 
-        const display = document.getElementById("instrumentDisplay");
-        if (display) {
-            display.textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
-        } else {
-            display.textContent = "---";
-        }
 
 
         requestAnimationFrame(loop);
