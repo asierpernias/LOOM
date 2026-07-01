@@ -58,9 +58,9 @@ timeline.setTransport(transport);
 
 const shell = new AppShell(app);
 shell.registerPanel({
-    id: "left",
+    id: "sidebar",
     title: "",
-    position: "left",
+    host: "sidebar",
     width: 200,
     component: leftPanelContent, 
 });
@@ -68,7 +68,7 @@ shell.registerPanel({
 shell.mountTimeline({container: centerContent});
 shell.mountTransport(transportContainer);
 
-shell.panelManager.setVisibility("left", false);
+shell.panelManager.setVisibility("sidebar", false);
 
 const defaultTrack = trackManager.createTrack({name: "Pista 1", instrument: null});
 recorderEngine.arm(defaultTrack);
@@ -211,7 +211,7 @@ const tracklist = new TrackList(document.getElementById("trackListContainer"), t
 
 welcome.querySelector("button").addEventListener("click", async () => {
     await import("tone").then(t => t.start());
-    shell.panelManager.setVisibility("left", true);
+    shell.panelManager.setVisibility("sidebar", true);
     timelineContainer.style.display = "block";
     welcome.remove();
     requestAnimationFrame(() => startApp());

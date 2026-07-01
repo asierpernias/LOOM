@@ -2,15 +2,15 @@ export class Panel {
     constructor({
         id,
         title = "",
-        position = "left",
+        host = "sidebar",
         width = 300,
         component = null,
     }) {
         this.id = id;
         this.title = title;
-        this.position = position;
         this.width = width;
         this.visible = true;
+        this.host = host;
 
         const content = component || this._createDefault();
         this.component = this._wrap(content);
@@ -29,7 +29,7 @@ export class Panel {
 
     _wrap(content) {
         const wrapper = document.createElement("div");
-        const isSidepanel = this.position === "left" || this.position === "right";
+        const isSidepanel = this.host === "sidebar" || this.host === "camera";
 
         wrapper.style.cssText = isSidepanel ? `
         width : ${this.width}px;

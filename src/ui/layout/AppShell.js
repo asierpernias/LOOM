@@ -13,7 +13,7 @@ export class AppShell {
     mountTimeline(timeline) {
         const panel = new Panel({
             id: "timeline",
-            position: "center",
+            host: "timeline",
             component: timeline.container,
         });
         this.panelManager.register(panel);

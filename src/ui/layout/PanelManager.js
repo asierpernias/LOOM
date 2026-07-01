@@ -17,6 +17,8 @@ export class PanelManager {
         overflow: hidden;
         `;
 
+        this.hosts = new Map();
+
         this.left = document.createElement("div");
         this.right = document.createElement("div");
         this.center = document.createElement("div");
@@ -30,6 +32,9 @@ export class PanelManager {
         this.right.style.cssText = this._panelBaseStyle();
 
         this.container.append(this.left, this.center, this.right);
+        this.registerHost("sidebar", this.left);
+        this.registerHost("timeline", this.center);
+        this.registerHost("camera", this.right);
         root.appendChild(this.container);
     }
 
@@ -44,20 +49,21 @@ export class PanelManager {
         `;
     }
 
+    registerHost(id, element) {
+        this.hosts.set(id, {
+            id, element, panels: []
+        });
+    }
+
     register(panel) {
         this.panels.set(panel.id, panel);
 
-        const host = this._getHost(panel.position);
+        const host = this.hosts.get(panel.host);
         if (!host) return;
-
-        host.appendChild(panel.component);
-    }
-
-    _getHost(position) {
-        if (position === "left") return this.left;
-        if (position === "right") return this.right;
-        if (position === "center") return this.center;
-        return null;
+        if (!host.panels.includes(panel)) {
+            host.panels.push(panel);
+        }
+        host.element.appendChild(panel.component);
     }
 
     toggle(id) {
@@ -79,7 +85,7 @@ export class PanelManager {
         return [...this.panels.values()].map(p => ({
             id: p.id,
             visible: p.visible,
-            position: p.position
+            host: p.host
         }));
     }
 
@@ -91,10 +97,30 @@ export class PanelManager {
             panel.visible = l.visible;
             panel.component.style.display = l.visible ? "flex" : "none";
 
-            const host = this._getHost(l.position);
-            if (host && panel.component.parentElement !== host) {
-                host.appendChild(panel.component);
+            const host = this.hosts.get(l.host);
+            if (host && panel.component.parentElement !== host.element) {
+                host.panels.push(panel);
+                host.element.appendChild(panel.component);
             }
         }
+    }
+
+    movePanel(id, newHost) {
+        const panel = this.panels.get(id);
+        if (!panel) return;
+
+        const oldHost = this.hosts.get(panel.host);
+        const nextHost = this.hosts.get(newHost);
+
+        if (!nextHost) return;
+
+        if (oldHost) {
+            oldHost.panels = oldHost.panels.filter(p => p != panel);
+        }
+
+        nextHost.panels.push(panel);
+        nextHost.element.appendChild(panel.component);
+
+        panel.host = newHost;
     }
 }
