@@ -189,6 +189,55 @@ async function initApp() {
         }
     }
 
+    const HUD_HEIGHT = 44;
+    const MARGIN = 16;
+
+    function getLayout(id) {
+        const wh = window.innerWidth;
+        const vw = window.innerHeight;
+
+        const top = HUD_HEIGHT + MARGIN;
+
+        const leftWidth = 380;
+        const rightWidth = 380;
+
+        const timelineHeight = 210;
+        const tracksHeight = 210;
+        const transportHeight = 210;
+
+        return {
+            timeline : {
+                x: MARGIN,
+                y: top,
+                width: vw - MARGIN * 2,
+                height: timelineHeight
+            },
+            thereminControls: {
+                x: MARGIN,
+                y: top + timelineHeight + MARGIN,
+                width: leftWidth,
+                height: vw - top - timelineHeight - MARGIN * 2   
+            },
+            tracks: {
+                x: leftWidth + MARGIN * 2,
+                y: top + timelineHeight + MARGIN,
+                width: rightWidth,
+                height: tracksHeight 
+            },
+            transport: {
+                x: leftWidth + MARGIN * 2,
+                y: top + timelineHeight + tracksHeight + MARGIN * 2,
+                width: rightWidth,
+                height: transportHeight 
+            },
+            camera: {
+                x: vw - 440,
+                y: top,
+                width: 420,
+                height: 320 
+            }
+        }[id] ?? { x: 100, y: 100};
+    }
     function openOrFocusWindow(id) {
         if (windows.hasWindow(id)) {
             windows.focusWindow(id);
@@ -202,23 +251,23 @@ async function initApp() {
         switch(id) {
             case "sequencer": 
                 const sequencerView = createView("sequencer");
-                windows.createWindow({id: "sequencer", title: sequencerView.title, component: sequencerView.component});
+                windows.createWindow({id: "sequencer", title: sequencerView.title, component: sequencerView.component, ...getLayout("sequencer") });
                 break;
             case "timeline":
-                windows.createWindow({id: "timeline", title: timelineView.title, component: timelineView.component});
+                windows.createWindow({id: "timeline", title: timelineView.title, component: timelineView.component, ...getLayout("timeline")});
                 break;
             case "camera":
-                windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component, persistent: true});
+                windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component, persistent: true, ...getLayout("camera")});
                 startCamera();
                 break;
             case "transport":
-                windows.createWindow({id: "transport", title: "Transport / FX", component: transportContainer});
+                windows.createWindow({id: "transport", title: "Transport / FX", component: transportContainer, ...getLayout("transport")});
                 break;
             case "tracks":
-                windows.createWindow({id: "tracks", title: "Tracks", component: trackContainer});
+                windows.createWindow({id: "tracks", title: "Tracks", component: trackContainer, ...getLayout("tracks")});
                 break;
             case "thereminControls":
-                windows.createWindow({id: "thereminControls", title: "Theremin Controls", component: thereminControls});
+                windows.createWindow({id: "thereminControls", title: "Theremin Controls", component: thereminControls, ...getLayout("thereminControls")});
                 break;
             default:
                 console.warn(`[HUD] tipo de vista desconocido: ${id}`);
@@ -246,7 +295,7 @@ async function initApp() {
     }
     app.style.cssText = `
         width: 100%;
-        height: 100vh;
+        height: 100vw;
         overflow: hidden;
     `;
 
