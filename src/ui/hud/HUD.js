@@ -37,7 +37,7 @@ export class HUD{
         font-size: 0.95rem;
         font-weight: bold;
         letter-spacing: 4px;
-        color: #00ff88;
+        color: #C97A4A;
         user-select: none;
         `
 
@@ -58,7 +58,7 @@ export class HUD{
         transition: background 0.15s, border-color 0.15s
         `;
 
-        btn.onmouseenter = () => btn.style.borderColor = "#00ff88";
+        btn.onmouseenter = () => btn.style.borderColor = "#C97A4A";
         btn.onmouseleave = () => btn.style.borderColor = "#444";
 
         const menu = document.createElement("div");
@@ -90,7 +90,7 @@ export class HUD{
             padding: 9px 12px;
             cursor: pointer;
             `;
-            item.onmouseenter = () => item.style.background = "#00ff88";
+            item.onmouseenter = () => item.style.background = "#C97A4A";
             item.onmouseleave = () => item.style.background = "none";
             item.onclick = () => {
                 this.onAddView(type);
