@@ -39,6 +39,7 @@ async function initApp() {
     })
     if (trackManager.getAllTracks().length === 0) {
         trackManager.createTrack({name: "Pista 1", instrument: "synth"});
+        recorderEngine.arm(defaultTrack);
     }
 
     const trackList = new TrackList(trackContainer, transport);
