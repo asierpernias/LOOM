@@ -145,7 +145,14 @@ async function initApp() {
     let cameraStarted = false;
 
     async function startCamera() {
-        if (cameraStarted) return;
+        const video = gestureManager.getVideoElement();
+        if (cameraStarted)  {
+            cameraPaused = false;
+            if (video && video.paused) {
+                video.play().catch(err => console.warn("Camera no se pudo reanudar"))
+            }
+            return;
+        };
         cameraStarted = true;
         try {
             const {width, height} = await gestureManager.start();
@@ -172,6 +179,10 @@ async function initApp() {
     function openOrFocusWindow(id) {
         if (windows.hasWindow(id)) {
             windows.focusWindow(id);
+
+            if (id === "camera") {
+                resumeCamera();
+            }
             return;
         }
 
@@ -184,7 +195,7 @@ async function initApp() {
                 windows.createWindow({id: "timeline", title: timelineView.title, component: timelineView.component});
                 break;
             case "camera":
-                windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component});
+                windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component, persistent: true});
                 startCamera();
                 break;
             case "transport":

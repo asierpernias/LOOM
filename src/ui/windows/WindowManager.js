@@ -18,6 +18,9 @@ export class WindowManager extends EventTarget  {
     focusWindow(id) {
         const win = this._windowsById.get(id);
         if (!win) return false;
+        if (win.style.display === "none"){
+            win.style.display = "flex";
+        }
         win.style.zIndex = this._zIndex++;
         if (typeof win._restore === "function") win._restore();
         return true;
@@ -36,7 +39,8 @@ export class WindowManager extends EventTarget  {
         width = null, 
         height = null,
         minWidth = 200,
-        minHeight = 140
+        minHeight = 140,
+        persistent = false
     }) {
         if (id != null && this._windowsById.has(id)) {
             this.focusWindow(id);
@@ -45,6 +49,7 @@ export class WindowManager extends EventTarget  {
 
         const win = document.createElement("div");
         win._id = id ?? null;
+        win._persistent = persistent;
 
         win.style.cssText = `
         position: absolute;
@@ -247,6 +252,13 @@ export class WindowManager extends EventTarget  {
     }
 
         closeWindow(win) {
+             if (win._persistent) {
+                this.dispatchEvent(new CustomEvent("close", {
+                    detail: {id: win._id}
+                }));
+                return;
+            }
+            
             if (win._cleanup) {
                 win._cleanup();
             }

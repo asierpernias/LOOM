@@ -6,7 +6,7 @@ export class GestureManager {
         this.video = document.createElement("video");
         this.video.autoplay = true;
         this.video.playsInline = true;
-        this.video.style.display = "none";
+        this.video.style.cssText = "position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;";
 
         this.handLandmarker = null;
         this.landmarks = null;
@@ -30,6 +30,12 @@ export class GestureManager {
         const stream = await navigator.mediaDevices.getUserMedia({video: true});
         this.video.srcObject = stream;
         await this.video.play();
+
+        this.video.addEventListener("pause", () => {
+            if (this._running) {
+                this.video.play().catch(err => console.warn("No se pudo reanudar tras pause", err))
+            }
+        })
 
         this._running = true;
 
