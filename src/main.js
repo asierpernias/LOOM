@@ -18,13 +18,21 @@ const app = document.querySelector("#app");
 const workspace = new Workspace(app);
 const windows = new WindowManager(workspace.el);
 const gestureManager = new GestureManager();
-const cameraPanel = new CameraPanel();
 const cameraView = createView("camera", { gestureManager });
 const timelineView = createView("timeline");
 const transportContainer = document.createElement("div");
 const transport = new Transport(transportContainer);
 const trackContainer = document.createElement("div");
+const handRenderer = cameraView.handRenderer;
 
+windows.addEventListener("close", (e) => {
+    if (e.detail.id === "camera") pauseCamera();
+});
+windows.addEventListener("minimize", (e) => {
+    if (e.detail.id === "camera"){
+        e.detail.minimized ? pauseCamera() : resumeCamera();
+    }
+})
 if (trackManager.getAllTracks().length === 0) {
     trackManager.createTrack({name: "Pista 1", instrument: "synth"});
 }
@@ -127,9 +135,32 @@ thereminControls.querySelector("#recButton").addEventListener("click", async e =
     timelineView.timeline.render();
 });
 
+let cameraStarted = false;
+
+async function startCamera() {
+    if (cameraStarted) return;
+    cameraStarted = true;
+
+    const {width, height} = await gestureManager.start();
+    handRenderer.resize(width, height);
+    loop();
+}
+
+let cameraPaused = false;
+
+function pauseCamera() {
+    cameraPaused = true;
+}
+
+function resumeCamera() {
+    if (cameraPaused) 
+        cameraPaused = false;
+    loop();
+}
+
 function openOrFocusWindow(id) {
     if (windows.hasWindow(id)) {
-        window.focusWindow(id);
+        windows.focusWindow(id);
         return;
     }
 
@@ -137,26 +168,24 @@ function openOrFocusWindow(id) {
         case "timeline":
             windows.createWindow({id: "timeline", title: timelineView.title, component: timelineView.component});
             break;
-        case "timeline":
+        case "camera":
             windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component});
             break;
-        case "timeline":
+        case "transport":
             windows.createWindow({id: "transport", title: "Transport / FX", component: transportContainer});
             break;
-        case "timeline":
+        case "tracks":
             windows.createWindow({id: "tracks", title: "Tracks", component: trackContainer});
             break;
-        case "timeline":
+        case "thereminControls":
             windows.createWindow({id: "thereminControls", title: "Theremin Controls", component: thereminControls});
             break;
         default:
             console.warn(`[HUD] tipo de vista desconocido: ${id}`);
     }
 }
-["timeline", "camera", "transport", "tracks", "thereminControls"].forEach(openOrFocusWindow)
+["timeline", "transport", "tracks", "thereminControls"].forEach(openOrFocusWindow)
 const hud = new HUD(app, (type) => openOrFocusWindow(type)); 
-
-const handRenderer = cameraView.handRenderer
 
 let fadeCounter = 0;
 
@@ -183,10 +212,6 @@ app.style.cssText = `
 
 
 async function startApp() {
-    const {width, height} = await gestureManager.start();
-    const aspectRatio = width / height;
-
-    handRenderer.resize(width, height);
     loop();
 }
 
@@ -280,7 +305,7 @@ async function startApp() {
         }
 
 
-
-        requestAnimationFrame(loop);
+        if (!cameraPaused) {
+            requestAnimationFrame(loop);
         }
-startApp();
+        }

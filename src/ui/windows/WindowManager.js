@@ -148,12 +148,14 @@ export class WindowManager extends EventTarget  {
                 win.style.resize = "none";
                 minimizeBtn.textContent = "+";
                 minimized = true;
+                this.dispatchEvent(new CustomEvent("minimize", {detail: { id: win._id, minimized = true}}));
             } else {
                 body.style.display = "block";
                 win.style.height = previousHeight ?? "300px";
                 win.style.resize = "both";
                 minimizeBtn.textContent = "_";
                 minimized = false;
+                this.dispatchEvent(new CustomEvent("minimize", {detail: { id: win._id, minimized = false}}));
             }
         };
 
