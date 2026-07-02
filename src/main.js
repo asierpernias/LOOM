@@ -29,6 +29,7 @@ async function initApp() {
     const transport = new Transport(transportContainer);
     const trackContainer = document.createElement("div");
     const handRenderer = cameraView.handRenderer;
+    let cameraLoopRunning = false;
 
     windows.addEventListener("close", (e) => {
         if (e.detail.id === "camera") pauseCamera();
@@ -143,7 +144,7 @@ async function initApp() {
     });
 
     let cameraStarted = false;
-
+    
     async function startCamera() {
         const video = gestureManager.getVideoElement();
         if (cameraStarted)  {
@@ -157,10 +158,12 @@ async function initApp() {
         try {
             const {width, height} = await gestureManager.start();
             handRenderer.resize(width, height);
-            loop()
         } catch (err) {
             console.error("Camara no iniciada", err);
             cameraStarted = false;
+        }
+        if (!cameraLoopRunning) {
+            loop();
         }
     }   
 
@@ -168,12 +171,22 @@ async function initApp() {
 
     function pauseCamera() {
         cameraPaused = true;
+
+        if (lastSampler && lastNote) {
+            releaseNote(lastSampler, lastNote);
+            recorderEngine.noteOff(lastNote);
+            lastNote = null;
+            lastSampler = null;
+        }
+
+        audioEngine.silenceLive();
     }
 
     function resumeCamera() {
-        if (cameraPaused) 
-            cameraPaused = false;
-        loop();
+        cameraPaused = false;
+        if (!cameraLoopRunning) {
+            loop();
+        }
     }
 
     function openOrFocusWindow(id) {
@@ -243,6 +256,11 @@ async function initApp() {
     }
 
     function loop() {
+            if (cameraPaused) {
+                cameraLoopRunning = false;
+                return;
+            }
+            cameraLoopRunning = true
             const video = gestureManager.getVideoElement();
             const landmarks = gestureManager.getLandmarks();
 
@@ -299,10 +317,7 @@ async function initApp() {
                     const display = document.getElementById("instrumentDisplay");
                     if (display) {
                         display.textContent = `${["Piano", "Synth", "Bass"][currentFingers - 1]} | ${noteName} | vol: ${vol.toFixed(2)}`;
-                    } else {
-                        display.textContent = "---";
                     }
-
                     if (lastSampler && lastNote){
                         releaseNote(lastSampler, lastNote);
                         recorderEngine.noteOff(lastNote);

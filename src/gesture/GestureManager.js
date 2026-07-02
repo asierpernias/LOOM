@@ -33,7 +33,7 @@ export class GestureManager {
 
         this.video.addEventListener("pause", () => {
             if (this._running) {
-                this.video.play().catch(err => console.warn("No se pudo reanudar tras pause", err))
+                this.video.play().catch(err => console.warn("No se pudo reanudar tras pause",))
             }
         })
 

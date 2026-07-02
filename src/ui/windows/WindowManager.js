@@ -253,12 +253,13 @@ export class WindowManager extends EventTarget  {
 
         closeWindow(win) {
              if (win._persistent) {
+                win.style.display = "none"
                 this.dispatchEvent(new CustomEvent("close", {
                     detail: {id: win._id}
                 }));
                 return;
             }
-            
+
             if (win._cleanup) {
                 win._cleanup();
             }
