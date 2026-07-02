@@ -19,6 +19,15 @@ import { sequencerEngine } from "./core/SequencerEngine.js";
 showStartScreen(initApp);
 async function initApp() {
 
+    const recPulseStyle = document.createElement("style");
+    recPulseStyle.textContent = `
+    @keyframes recPulse {
+        0%, 100% { border-color: #333; }
+        50% { border-color: #ff4444; }
+    }
+    `;
+    document.head.appendChild(recPulseStyle);
+
     const app = document.querySelector("#app");
     const workspace = new Workspace(app);
     const windows = new WindowManager(workspace.el);
@@ -131,6 +140,8 @@ async function initApp() {
             isRecording = true;
             Btn.textContent = "STOP";
             Btn.style.background = "#444";
+            const thereminWin = windows.getWindow("thereminControls");
+            if (thereminWin) thereminWin.style.animation = "recPulse 1s infinite";
             return;
         }
 
@@ -138,6 +149,9 @@ async function initApp() {
         isRecording = false;
         Btn.textContent = "REC";
         Btn.style.background = "#ff4444";
+
+        const thereminWin = windows.getWindow("thereminControls");
+        if (thereminWin) thereminWin.style.animation = "none";
 
         await recorderEngine.renderClip(clip, InstrumentFactory);
         timelineView.timeline.render();
