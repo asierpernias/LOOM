@@ -1,6 +1,7 @@
 const VIEW_OPTIONS = [
     {type: "timeline", label: "Timeline"},
     {type: "camera", label: "Camera"},
+    {type: "sequencer", label: "Sequencer"},
     {type: "transport", label: "Transport / FX"},
     {type: "tracks", label: "Tracks"},
     {type: "thereminControls", label: "Theremin Controls"},

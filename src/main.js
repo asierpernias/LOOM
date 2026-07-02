@@ -14,6 +14,7 @@ import { HUD } from "./ui/hud/HUD.js";
 import { TrackList } from "./ui/TrackList.js";
 import { Transport } from "./ui/Transport.js";
 import { showStartScreen } from "./ui/StartScreen.js";
+import { sequencerEngine } from "./core/SequencerEngine.js";
 
 showStartScreen(initApp);
 async function initApp() {
@@ -175,6 +176,10 @@ async function initApp() {
         }
 
         switch(id) {
+            case "sequencer": 
+                const sequencerView = createView("sequencer");
+                windows.createWindow({id: "sequencer", title: sequencerView.title, component: sequencerView.component});
+                break;
             case "timeline":
                 windows.createWindow({id: "timeline", title: timelineView.title, component: timelineView.component});
                 break;
