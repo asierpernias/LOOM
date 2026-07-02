@@ -356,6 +356,7 @@ export class Timeline {
             canvas.height = 52;
             canvas.style.cssText = "display: block; width: 100%; height: 100%;";
             this._drawWaveform(canvas, clip.audioData, track.color);
+            block.appendChild(canvas);
         }
 
         const fadeOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -1008,7 +1009,7 @@ export class Timeline {
 
         const dropdown = document.createElement("div");
         dropdown.style.cssText = `
-        display: flex;
+        display: none;
         position: fixed;
         background: #1a1a1a;
         border: 1px solid #444;
