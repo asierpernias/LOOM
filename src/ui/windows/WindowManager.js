@@ -141,21 +141,21 @@ export class WindowManager extends EventTarget  {
         let previousHeight = null;
 
         const toggleMinimaze = () => {
-            if (minimized) {
+            if (!minimized) {
                 previousHeight = win.style.height;
                 body.style.display = "none";
                 win.style.height = "32px";
                 win.style.resize = "none";
                 minimizeBtn.textContent = "+";
                 minimized = true;
-                this.dispatchEvent(new CustomEvent("minimize", {detail: { id: win._id, minimized = true}}));
+                this.dispatchEvent(new CustomEvent("minimize", {detail: { id: win._id, minimized: true}}));
             } else {
                 body.style.display = "block";
                 win.style.height = previousHeight ?? "300px";
                 win.style.resize = "both";
                 minimizeBtn.textContent = "_";
                 minimized = false;
-                this.dispatchEvent(new CustomEvent("minimize", {detail: { id: win._id, minimized = false}}));
+                this.dispatchEvent(new CustomEvent("minimize", {detail: { id: win._id, minimized: false}}));
             }
         };
 

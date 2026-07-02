@@ -100,6 +100,7 @@ thereminControls.innerHTML = `
 `;
 
 
+
 thereminControls.querySelector("#reverbSlider").addEventListener("input", e => {
     audioEngine.setReverb(parseFloat(e.target.value));
 });
@@ -140,11 +141,15 @@ let cameraStarted = false;
 async function startCamera() {
     if (cameraStarted) return;
     cameraStarted = true;
-
-    const {width, height} = await gestureManager.start();
-    handRenderer.resize(width, height);
-    loop();
-}
+    try {
+        const {width, height} = await gestureManager.start();
+        handRenderer.resize(width, height);
+        loop()
+    } catch (err) {
+        console.error("Camara no iniciada", err);
+        cameraStarted = false;
+    }
+}   
 
 let cameraPaused = false;
 
@@ -170,6 +175,7 @@ function openOrFocusWindow(id) {
             break;
         case "camera":
             windows.createWindow({id: "camera", title: cameraView.title, component: cameraView.component});
+            startCamera();
             break;
         case "transport":
             windows.createWindow({id: "transport", title: "Transport / FX", component: transportContainer});
