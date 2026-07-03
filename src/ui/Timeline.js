@@ -101,14 +101,16 @@ export class Timeline {
     _renderGrid(lanesWrapper, totalWidth) {
         const snapSeconds =projectSettings.getSnapSeconds();
         if (snapSeconds === null) return;
-
+        
         const gridContainer = document.createElement("div");
+        const totalHeight = trackManager.getAllTracks().length * 65;
         gridContainer.style.cssText = `
         position: absolute;
         top: 0;
         bottom: 0;
-        left: 95px;
+        left: 80px;
         width: ${totalWidth}px;
+        height: ${totalHeight}px;
         pointer-events: none;
         z-index: 0;
         `;
@@ -251,7 +253,7 @@ export class Timeline {
             this._cursorVisible = true;
             this._cursorTime = newTime;
             if (this._cursorEl) {
-                this._cursorEl.style.left = `${90 + newTime * this.pixelsPerSecond}px`;
+                this._cursorEl.style.left = `${80 + newTime * this.pixelsPerSecond}px`;
                 this._cursorEl.style.display = "block";
             }
         });

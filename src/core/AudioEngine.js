@@ -1,5 +1,6 @@
 import * as Tone from "tone";
 
+Tone.getContext().lookAhead = 0.01;
 class AudioEngine {
     constructor() {
         this.liveChannel = new Tone.Channel({volume: 0}).toDestination();
