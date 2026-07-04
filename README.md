@@ -35,6 +35,28 @@ The app is designed as a workspace of screens (draggable, minimizable and height
 · Mute / solo / arm for each tracklane <br>
 · Available as a web and a as a desktop app (Windows, via Tauri) <br>
 
+
+## Technologies 
+
+#### Languages
+· JavaScript
+· HTML / CSS
+· Rust (wrapper nativo de Tauri)
+#### Frontend / Builder
+· Vite - bundler y dev server
+#### Audio
+· Tone.js
+· Web Audio API
+#### AI
+· Mediapipe Tasks Vision
+· Canvas API
+#### Others
+· Tauri
+
+
+
+
+
 ## How to use it
 
 ### Dependencies
