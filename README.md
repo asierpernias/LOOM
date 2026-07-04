@@ -68,6 +68,10 @@ npm run tauri build
 ```
  
 The installer is in `src-tauri/target/release/bundle/`.
+<img width="388" height="635" alt="Captura de pantalla 2026-06-15 165757" src="https://github.com/user-attachments/assets/c362beaa-e5cc-42d4-ab12-6bc1f09f71fa" />
+## Screenshots
+<img width="1185" height="134" alt="Captura de pantalla 2026-06-29 154001" src="https://github.com/user-attachments/assets/e1a47f01-474b-486c-b729-a41afa505f7a" />
+<img width="1912" height="1015" alt="Captura de pantalla 2026-07-03 135007" src="https://github.com/user-attachments/assets/b1af3bcc-e16a-4dfb-a321-8a88f6e413e3" />
 
-## How to use it
+
 
