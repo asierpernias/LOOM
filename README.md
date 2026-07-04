@@ -37,3 +37,37 @@ The app is designed as a workspace of screens (draggable, minimizable and height
 
 ## How to use it
 
+### Dependencies
+
+- [Node.js](https://nodejs.org/) 18+ y npm
+- Para compilar la versión de escritorio: [Rust](https://www.rust-lang.org/tools/install) y las dependencias de sistema de Tauri ([guía oficial](https://tauri.app/start/prerequisites/))
+- Una cámara web (para la detección de gestos)
+
+### Option 1 (releases)
+
+Download the version deployed in Github Releases and install LOOM in yout desktop
+
+### Option 2 (web (development))
+
+```
+npm install
+npm run dev
+```
+
+### Option 3 (production build)
+
+```
+npm run build
+npx serve dist
+```
+
+### Option 4 (Desktop Tauri)
+
+```
+npm run tauri build
+```
+ 
+The installer is in `src-tauri/target/release/bundle/`.
+
+## How to use it
+
