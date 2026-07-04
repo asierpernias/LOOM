@@ -16,24 +16,24 @@ Loom transforms any webcam in a complete music controller: move your hand, chang
 
 The app is designed as a workspace of screens (draggable, minimizable and height/width adjustable), instead of set layout. This so every user can set his own prefered layout of work.
 
-· Camera
-· Theremin Controls - reverb, delay, octave and the REC button
-· Tracks - list of tracks with solo/mute/arm/track volume
-· Transport - reproduction, bpm
-· Sequencer - create your own rythms from simple samples
+· Camera \n
+· Theremin Controls - reverb, delay, octave and the REC button \n
+· Tracks - list of tracks with solo/mute/arm/track volume \n
+· Transport - reproduction, bpm \n
+· Sequencer - create your own rythms from simple samples \n
 
 ## Features
 
-· Live detection of the hand
-· Recording peformance -> clip on Timeline with offline render
-· Complete timeline: move, cut, trim, duplicate, fade in/out, volume per clip, multiple selection for drag, context menu
-· Configurable snap (1/4, 1/8, 1/16, free)
-· Undo/Redo (patron command) - Ctrl Z / Ctrl Y
-· Export WAV / MIDI / MP3
-· Save and load complete projects (.zip)
-· Visual indicator of recording
-· Mute / solo / arm for each tracklane
-· Available as a web and a as a desktop app (Windows, via Tauri)
+· Live detection of the hand \n
+· Recording peformance -> clip on Timeline with offline render \n
+· Complete timeline: move, cut, trim, duplicate, fade in/out, volume per clip, multiple selection for drag, context menu \n
+· Configurable snap (1/4, 1/8, 1/16, free) \n
+· Undo/Redo (patron command) - Ctrl Z / Ctrl Y \n
+· Export WAV / MIDI / MP3 \n
+· Save and load complete projects (.zip) \n
+· Visual indicator of recording \n
+· Mute / solo / arm for each tracklane \n
+· Available as a web and a as a desktop app (Windows, via Tauri) \n
 
 ## How to use it
 
