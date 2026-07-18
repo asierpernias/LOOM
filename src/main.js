@@ -359,6 +359,7 @@ async function initApp() {
             
                 handRenderer.drawHand(landmarks, color);
 
+                const CAMERA_PADDING = 0.4;
                 const wrist = landmarks[0];
                 const rawX = 1 - wrist.x;
                 const rawY = wrist.y;
