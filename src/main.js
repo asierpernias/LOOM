@@ -359,9 +359,16 @@ async function initApp() {
             
                 handRenderer.drawHand(landmarks, color);
 
+                const CAMERA_PADDING = 0.1;
                 const wrist = landmarks[0];
-                const rawX = 1 - wrist.x;
-                const rawY = wrist.y;
+                const rawX = Math.max(
+                    0,
+                    Math.min(1, (x - CAMERA_PADDING) / (1 - CAMERA_PADDING * 2))
+                );
+                const rawY = Math.max(
+                    0,
+                    Math.min(1, (y - CAMERA_PADDING) / (1 - CAMERA_PADDING * 2))
+                );
             
                 smoothX += (rawX - smoothX) * SMOOTH;
                 smoothY += (rawY - smoothY) * SMOOTH;
