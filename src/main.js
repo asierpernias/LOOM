@@ -361,12 +361,19 @@ async function initApp() {
 
                 const CAMERA_PADDING = 0.25;
                 const wrist = landmarks[0];
-                const rawX = 1 - wrist.x;
-                const rawY = wrist.y;
-            
+
+                const rawX = Math.max(
+                    0,
+                    Math.min(1, ((1 - wrist.x) - CAMERA_PADDING) / (1 - CAMERA_PADDING * 2))
+                );
+
+                const rawY = Math.max(
+                    0,
+                    Math.min(1, (wrist.y - CAMERA_PADDING) / (1 - CAMERA_PADDING * 2))
+                );
+
                 smoothX += (rawX - smoothX) * SMOOTH;
                 smoothY += (rawY - smoothY) * SMOOTH;
-
                 const freq = getNote(smoothX);
                 const vol = 1 - smoothY;
 

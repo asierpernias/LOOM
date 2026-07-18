@@ -1,0 +1,133 @@
+LOOM – User Guide
+
+Overview
+
+LOOM is a gesture-controlled Digital Audio Workstation (DAW) that enables music composition through a virtual theremin. Utilizing hand tracking powered by MediaPipe, you can perform melodies without a physical controller.
+
+The application is organized into five main sections:
+
+1. Camera
+2. Transport
+3. Theremin Controls
+4. Tracks
+5. Timeline
+
+Camera
+
+The Camera window shows the live webcam feed and tracks your dominant hand. Before using LOOM:
+
+- Allow camera access when prompted.
+- Ensure your hand is clearly visible.
+- Use adequate lighting.
+- Keep your hand in the central area of the image for optimal tracking.
+
+Gesture Mapping
+
+- Move left/right: Change pitch
+- Move up/down: Change volume
+- Adjust the number of extended fingers: Switch instrument
+
+Theremin Controls
+
+This panel allows you to configure the virtual instrument. Depending on the version in use, you can:
+
+- View the active instrument.
+- Monitor the generated note and current volume.
+- Adjust theremin parameters.
+- Select different sound presets.
+
+Altering the number of visible fingers will automatically switch the active instrument.
+
+Transport
+
+The Transport panel manages playback and recording.
+
+- Play: Starts playback of your current project.
+- Stop: Stops playback and resets the playhead.
+- Record: Starts recording your theremin performance.
+
+Upon finishing recording, LOOM automatically creates a clip and places it on the selected track.
+
+Tracks
+
+The Tracks window oversees all project tracks. Each track can be:
+
+- Renamed
+- Deleted
+- Muted
+- Set to solo mode
+- Armed for recording (if enabled)
+
+Tracks can contain multiple clips.
+
+Timeline
+
+The Timeline is where you assemble your project. Here you can:
+
+- View all recorded clips.
+- Position and move clips in time.
+- Select clips.
+- Arrange multiple tracks.
+- Track the playback cursor during playback.
+
+Each horizontal lane represents a track.
+
+Recording Workflow
+
+1. Launch LOOM.
+2. Allow camera access.
+3. Create a new track.
+4. Select the track.
+5. Press Record.
+6. Perform using hand gestures.
+7. Press Stop.
+8. A new clip appears automatically in the Timeline.
+9. Repeat to build your composition.
+
+Playback
+
+Press Play to listen to your project. During playback:
+
+- The playhead moves across the timeline.
+- Clips play in chronological order.
+- Muted tracks are ignored.
+- Solo tracks take precedence over others.
+
+Export
+
+LOOM allows you to export your work in formats such as WAV, MP3, MIDI, or as a project file. Choose your desired format from the Export menu.
+
+Tips
+
+- Work in a well-lit environment.
+- Keep your hand inside the camera frame.
+- Avoid quick movements when learning controls.
+- Start with short clips.
+- Build songs layer by layer.
+- Utilize multiple tracks for different instruments.
+
+Troubleshooting
+
+Camera issues:
+- Check camera permissions.
+- Ensure no other application is using the webcam.
+
+Hand not detected:
+- Improve lighting.
+- Keep your entire hand visible and centered in the camera frame.
+
+No sound:
+- Verify system volume settings.
+- Confirm that the browser or application has audio permissions and playback is started.
+
+Typical Workflow
+
+1. Open LOOM
+2. Allow Camera Access
+3. Create Track
+4. Choose Instrument
+5. Record Performance
+6. Clip Appears
+7. Arrange Timeline
+8. Play Project
+9. Export
